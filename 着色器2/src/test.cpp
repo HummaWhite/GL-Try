@@ -106,10 +106,7 @@ int main()
         int vertexColorLocation = glGetUniformLocation(shader.ID, "vertexColor");
         glUniform4f(vertexColorLocation, 1.0f, 0.5f, blueValue, 1.0f);
 
-        float additionY = sin(timeValue * 3.0f) / 2.0f;
-        int vertexLocation = glGetUniformLocation(shader.ID, "additionY");
-        glUniform1f(vertexLocation, additionY);
-
+        shader.setFloat("additionY", (float)sin(timeValue * 3.0f) / 2.0f);
 
         glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
         glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
