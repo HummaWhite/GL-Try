@@ -37,9 +37,46 @@ Shader::Shader(const char* filepath)
 		return;
 	}
 
-	const char* vertexSource = vertexCode.c_str();
-	const char* fragmentSource = fragmentCode.c_str();
+	compileShader(vertexCode.c_str(), fragmentCode.c_str());
+}
 
+Shader::~Shader()
+{
+	glDeleteProgram(ID);
+}
+
+void Shader::enable()
+{
+	glUseProgram(ID);
+}
+
+void Shader::disable()
+{
+	glUseProgram(0);
+}
+
+void Shader::setUniform1f(const char* name, float v0)
+{
+	glUniform1f(getUniformLocation(name), v0);
+}
+
+void Shader::setUniform2f(const char* name, float v0, float v1)
+{
+	glUniform2f(getUniformLocation(name), v0, v1);
+}
+
+void Shader::setUniform3f(const char* name, float v0, float v1, float v2)
+{
+	glUniform3f(getUniformLocation(name), v0, v1, v2);
+}
+
+void Shader::setUniform4f(const char* name, float v0, float v1, float v2, float v3)
+{
+	glUniform4f(getUniformLocation(name), v0, v1, v2, v3);
+}
+
+void Shader::compileShader(const char* vertexSource, const char* fragmentSource)
+{
 	GLuint vertexShader = glCreateShader(GL_VERTEX_SHADER);
 	glShaderSource(vertexShader, 1, &vertexSource, NULL);
 	glCompileShader(vertexShader);
@@ -61,22 +98,17 @@ Shader::Shader(const char* filepath)
 		char info[512];
 		glGetProgramInfoLog(ID, 512, NULL, info);
 		std::cout << info << std::endl;
+		return;
 	}
+
 	glDeleteShader(vertexShader);
 	glDeleteShader(fragmentShader);
 }
 
-void Shader::enable()
+GLint Shader::getUniformLocation(const char* name)
 {
-	glUseProgram(ID);
-}
-
-void Shader::setInt(const std::string& name, int value) const
-{
-	glUniform1i(glGetUniformLocation(ID, name.c_str()), value);
-}
-
-void Shader::setFloat(const std::string& name, float value) const
-{
-	glUniform1f(glGetUniformLocation(ID, name.c_str()), value);
+	GLint location = glGetUniformLocation(ID, name);
+	if (location == -1)
+		std::cout << "Error: unable to locate the uniform::" << name << std::endl;
+	return location;
 }

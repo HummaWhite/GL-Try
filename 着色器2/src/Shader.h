@@ -8,9 +8,17 @@
 class Shader
 {
 public:
-	Shader(const char* filepath);
-	void enable();
 	GLuint ID;
-	void setInt(const std::string& name, int value) const;
-	void setFloat(const std::string& name, float value) const;
+public:
+	Shader(const char* filepath);
+	~Shader();
+	void enable();
+	void disable();
+	void setUniform1f(const char* name, float v0);
+	void setUniform2f(const char* name, float v0, float v1);
+	void setUniform3f(const char* name, float v0, float v1, float v2);
+	void setUniform4f(const char* name, float v0, float v1, float v2, float v3);
+private:
+	void compileShader(const char* vertexSource, const char* fragmentSource);
+	GLint getUniformLocation(const char* name);
 };
