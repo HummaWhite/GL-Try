@@ -4,12 +4,16 @@
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 
+#include "VertexBuffer.h"
+#include "VertexBufferLayout.h"
+
 class VertexArray
 {
 public:
-	VertexArray(void (*settings)() = nullptr);
+	VertexArray();
 	~VertexArray();
 
+	void addBuffer(const VertexBuffer& vb, const VertexBufferLayout& layout);
 	void bind();
 	void unbind();
 

@@ -35,14 +35,6 @@ void processInput(GLFWwindow* window)
         glfwSetWindowShouldClose(window, true);
 }
 
-void VAOSettings()
-{
-    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
-    glEnableVertexAttribArray(0);
-    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(2 * sizeof(float)));
-    glEnableVertexAttribArray(1);
-}
-
 int main()
 {
     initGLFWdata();
@@ -66,8 +58,6 @@ int main()
 
     glfwSetFramebufferSizeCallback(window, framebufferSizeCallback);
 
-    Shader shader("res/shader/basic.shader");
-
     float vertices[] =
     {
          0.5f,  0.5f,  0.0f, 0.0f, 1.0f,
@@ -76,30 +66,20 @@ int main()
         -0.5f,  0.5f,  0.0f, 0.0f, -1.0f
     };
 
-    GLuint indices[] =
-    {
-        0, 1, 3,
-        1, 2, 3
-    };
+    GLuint indices[] = {0, 1, 2, 2, 3, 0};
 
-    GLuint VBO, VAO, EBO;
-
-    VertexBuffer vbo(vertices, sizeof(vertices));
-
-    VertexArray vao(VAOSettings);
-
-    IndexBuffer ebo(indices, sizeof(indices));
-    
-
-    //glBindBuffer(GL_ARRAY_BUFFER, 0);
-    //glBindVertexArray(0);
-
-    //glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
-
+    VertexBuffer vb(vertices, sizeof(vertices));
+    VertexBufferLayout layout;
+    layout.add<float>(2);
+    layout.add<GL_FLOAT>(3);
+    VertexArray va;
+    va.addBuffer(vb, layout);
+    IndexBuffer eb(indices, sizeof(indices));
+    Shader shader("res/shader/basic.shader");
 
     while (!glfwWindowShouldClose(window))
     {
-        processInput(window);   
+        processInput(window);
 
         glClearColor(0.3f, 0.2f, 0.3f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
