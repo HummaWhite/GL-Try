@@ -6,6 +6,7 @@
 #include <string>
 
 Shader::Shader(const char* filepath)
+	:ID(0)
 {
 	std::string vertexCode;
 	std::string fragmentCode;
@@ -45,12 +46,12 @@ Shader::~Shader()
 	glDeleteProgram(ID);
 }
 
-void Shader::enable()
+void Shader::enable() const
 {
 	glUseProgram(ID);
 }
 
-void Shader::disable()
+void Shader::disable() const
 {
 	glUseProgram(0);
 }

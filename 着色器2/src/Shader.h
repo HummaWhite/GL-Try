@@ -12,8 +12,8 @@ public:
 public:
 	Shader(const char* filepath);
 	~Shader();
-	void enable();
-	void disable();
+	void enable() const;
+	void disable() const;
 	void setUniform1f(const char* name, float v0);
 	void setUniform2f(const char* name, float v0, float v1);
 	void setUniform3f(const char* name, float v0, float v1, float v2);

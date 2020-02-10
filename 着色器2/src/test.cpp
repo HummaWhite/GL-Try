@@ -6,6 +6,7 @@
 #include "VertexBuffer.h"
 #include "IndexBuffer.h"
 #include "VertexArray.h"
+#include "Renderer.h"
 
 const int W_WIDTH = 1280;
 const int W_HEIGHT = 720;
@@ -13,7 +14,6 @@ const int W_HEIGHT = 720;
 void initGLFWdata();
 void framebufferSizeCallback(GLFWwindow* window, int width, int height);
 void processInput(GLFWwindow* window);
-void VAOSettings();
 
 void initGLFWdata()
 {
@@ -74,15 +74,16 @@ int main()
     layout.add<GL_FLOAT>(3);
     VertexArray va;
     va.addBuffer(vb, layout);
-    IndexBuffer eb(indices, sizeof(indices));
+    IndexBuffer eb(indices, 6);
     Shader shader("res/shader/basic.shader");
+
+    Renderer renderer;
 
     while (!glfwWindowShouldClose(window))
     {
         processInput(window);
 
-        glClearColor(0.3f, 0.2f, 0.3f, 1.0f);
-        glClear(GL_COLOR_BUFFER_BIT);
+        renderer.clear(0.3f, 0.2f, 0.3f, 1.0f);
 
         shader.enable();
         
@@ -92,8 +93,7 @@ int main()
         shader.setUniform4f("vertexColor", 1.0f, 0.5f, blueValue, 1.0f);
         shader.setUniform1f("additionY", sin(timeValue * 3.0f) / 2.0f);
 
-        glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+        renderer.draw(va, eb, shader);
 
         glfwSwapBuffers(window);
         glfwPollEvents();

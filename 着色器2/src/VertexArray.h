@@ -14,8 +14,8 @@ public:
 	~VertexArray();
 
 	void addBuffer(const VertexBuffer& vb, const VertexBufferLayout& layout);
-	void bind();
-	void unbind();
+	void bind() const;
+	void unbind() const;
 
 private:
 	GLuint ID;

@@ -7,10 +7,12 @@
 class IndexBuffer
 {
 public:
-	IndexBuffer(const void* data, int size, GLenum type = GL_STATIC_DRAW);
+	IndexBuffer(const GLuint* data, GLuint count, GLenum type = GL_STATIC_DRAW);
 	~IndexBuffer();
-	void bind();
-	void unbind();
+	GLuint count() const;
+	void bind() const;
+	void unbind() const;
 private:
 	GLuint ID;
+	GLuint m_Count;
 };
