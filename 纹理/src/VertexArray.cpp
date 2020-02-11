@@ -1,6 +1,7 @@
 #include "VertexArray.h"
 
 VertexArray::VertexArray()
+	:m_VerticesCount(0)
 {
 	glGenVertexArrays(1, &ID);
 	glBindVertexArray(ID);
@@ -26,6 +27,7 @@ void VertexArray::addBuffer(const VertexBuffer& vb, const VertexBufferLayout& la
 		glVertexAttribPointer(i, count, type, normalized, layout.stride(), (void*)offset);
 		offset += sizeofGLType(type) * count;
 	}
+	m_VerticesCount = vb.count();
 }
 
 void VertexArray::bind() const

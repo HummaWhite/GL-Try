@@ -56,29 +56,34 @@ void Shader::disable() const
 	glUseProgram(0);
 }
 
-void Shader::setUniform1i(const char* name, int v)
+void Shader::setUniform1i(const char* name, int v) const
 {
 	glUniform1i(getUniformLocation(name), v);
 }
 
-void Shader::setUniform1f(const char* name, float v0)
+void Shader::setUniform1f(const char* name, float v0) const
 {
 	glUniform1f(getUniformLocation(name), v0);
 }
 
-void Shader::setUniform2f(const char* name, float v0, float v1)
+void Shader::setUniform2f(const char* name, float v0, float v1) const
 {
 	glUniform2f(getUniformLocation(name), v0, v1);
 }
 
-void Shader::setUniform3f(const char* name, float v0, float v1, float v2)
+void Shader::setUniform3f(const char* name, float v0, float v1, float v2) const
 {
 	glUniform3f(getUniformLocation(name), v0, v1, v2);
 }
 
-void Shader::setUniform4f(const char* name, float v0, float v1, float v2, float v3)
+void Shader::setUniform4f(const char* name, float v0, float v1, float v2, float v3) const
 {
 	glUniform4f(getUniformLocation(name), v0, v1, v2, v3);
+}
+
+void Shader::setUniformMat4(const char* name, const glm::mat4& mat) const
+{
+	glUniformMatrix4fv(getUniformLocation(name), 1, GL_FALSE, &mat[0][0]);
 }
 
 void Shader::compileShader(const char* vertexSource, const char* fragmentSource)
@@ -111,7 +116,7 @@ void Shader::compileShader(const char* vertexSource, const char* fragmentSource)
 	glDeleteShader(fragmentShader);
 }
 
-GLint Shader::getUniformLocation(const char* name)
+GLint Shader::getUniformLocation(const char* name) const
 {
 	GLint location = glGetUniformLocation(ID, name);
 	if (location == -1)

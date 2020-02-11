@@ -14,4 +14,5 @@ class Renderer
 public:
 	void clear(float v0 = 1.0f, float v1 = 1.0f, float v2 = 1.0f, float v3 = 1.0f) const;
 	void draw(const VertexArray& va, const IndexBuffer& eb, const Shader& shader) const;
+	void draw(const VertexArray& va, const Shader& shader) const;
 };
