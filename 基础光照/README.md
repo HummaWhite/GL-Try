@@ -7,3 +7,15 @@
 ## 2.15
 
 多光源（平行光、球面光、锥形光）
+
+![](https://github.com/HummaWhite/GL-Try/blob/master/纹理/md-pics/OpenGL-Try 2020_2_14 14_37_12.png)
+
+主动+漫反射+高光反射，图中错误地把未将高光分量先与物体颜色混合，不过效果出奇地可以。
+
+![](https://github.com/HummaWhite/GL-Try/blob/master/纹理/md-pics/OpenGL-Try 2020_2_15 19_55_18.png)
+
+多个点光源
+
+![](https://github.com/HummaWhite/GL-Try/blob/master/纹理/md-pics/OpenGL-Try 2020_2_15 20_38_32.png)
+
+锥形聚光
