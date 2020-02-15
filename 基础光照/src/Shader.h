@@ -7,6 +7,8 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
+#include "Lighting.h"
+
 class Shader
 {
 public:
@@ -23,7 +25,9 @@ public:
 	void setUniform4f(const char* name, float v0, float v1, float v2, float v3) const;
 	void setUniformVec3(const char* name, const glm::vec3 vec) const;
 	void setUniformVec4(const char* name, const glm::vec4 vec) const;
+	void setUniformMat3(const char* name, const glm::mat3& mat) const;
 	void setUniformMat4(const char* name, const glm::mat4& mat) const;
+	void setLight(const LightGroup& lightGroup);
 private:
 	void compileShader(const char* vertexSource, const char* fragmentSource, const char* geometrySource);
 	GLint getUniformLocation(const char* name) const;

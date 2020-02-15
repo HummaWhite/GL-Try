@@ -1,3 +1,5 @@
+#define _CRT_SECURE_NO_WARNINGS
+
 #include "Shader.h"
 
 #include <fstream>
@@ -104,9 +106,64 @@ void Shader::setUniformVec4(const char* name, const glm::vec4 vec) const
 	glUniform4f(getUniformLocation(name), vec.x, vec.y, vec.z, vec.w);
 }
 
+void Shader::setUniformMat3(const char* name, const glm::mat3& mat) const
+{
+	glUniformMatrix3fv(getUniformLocation(name), 1, GL_FALSE, &mat[0][0]);
+}
+
 void Shader::setUniformMat4(const char* name, const glm::mat4& mat) const
 {
 	glUniformMatrix4fv(getUniformLocation(name), 1, GL_FALSE, &mat[0][0]);
+}
+
+void Shader::setLight(const LightGroup& lightGroup)
+{
+	const auto& lights = lightGroup.lights();
+	GLuint dirCount(0), pointCount(0), spotCount(0);
+	char tmp[50];
+	for (auto light : lights)
+	{
+		if (light == nullptr) continue;
+		switch (light->type)
+		{
+		case Light::DIRECTIONAL:
+			sprintf(tmp, "dirLights[%d].dir", dirCount);
+			setUniformVec3(tmp, light->dir);
+			sprintf(tmp, "dirLights[%d].color", dirCount);
+			setUniformVec3(tmp, light->color);
+			dirCount++;
+			break;
+		case Light::POINT:
+			sprintf(tmp, "pointLights[%d].pos", pointCount);
+			setUniformVec3(tmp, light->pos);
+			sprintf(tmp, "pointLights[%d].dir", pointCount);
+			setUniformVec3(tmp, light->dir);
+			sprintf(tmp, "pointLights[%d].color", pointCount);
+			setUniformVec3(tmp, light->color);
+			sprintf(tmp, "pointLights[%d].attenuation", pointCount);
+			setUniformVec3(tmp, light->attenuation);
+			pointCount++;
+			break;
+		case Light::SPOT:
+			sprintf(tmp, "spotLights[%d].pos", spotCount);
+			setUniformVec3(tmp, light->pos);
+			sprintf(tmp, "spotLights[%d].dir", spotCount);
+			setUniformVec3(tmp, light->dir);
+			sprintf(tmp, "spotLights[%d].color", spotCount);
+			setUniformVec3(tmp, light->color);
+			sprintf(tmp, "spotLights[%d].attenuation", spotCount);
+			setUniformVec3(tmp, light->attenuation);
+			sprintf(tmp, "spotLights[%d].cutOff", spotCount);
+			setUniform1f(tmp, light->cutOff);
+			sprintf(tmp, "spotLights[%d].outerCutOff", spotCount);
+			setUniform1f(tmp, light->outerCutOff);
+			spotCount++;
+			break;
+		}
+	}
+	if (dirCount > 0) setUniform1i("dirLightsCount", dirCount);
+	if (pointCount > 0) setUniform1i("pointLightsCount", pointCount);
+	if (spotCount > 0) setUniform1i("spotLightsCount", spotCount);
 }
 
 void Shader::compileShader(const char* vertexSource, const char* fragmentSource, const char* geometrySource)

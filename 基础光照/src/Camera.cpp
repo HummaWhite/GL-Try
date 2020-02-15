@@ -48,6 +48,14 @@ void Camera::changeFOV(float offset)
 	if (m_FOV < 25.0) m_FOV = 25.0;
 }
 
+glm::vec3 Camera::pointing() const
+{
+	float aX = cos(m_Angle.y) * cos(m_Angle.x);
+	float aY = cos(m_Angle.y) * sin(m_Angle.x);
+	float aZ = sin(m_Angle.y);
+	return glm::normalize(glm::vec3(aX, aY, aZ));
+}
+
 glm::mat4 Camera::getViewMatrix()
 {
 	float aX = cos(m_Angle.y) * cos(m_Angle.x);

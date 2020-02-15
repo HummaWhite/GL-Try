@@ -26,12 +26,15 @@ public:
 	void changeFOV(float offset);
 
 	float FOV() const { return m_FOV; }
+	glm::vec3 pos() const { return m_Pos; }
+	glm::vec3 angle() const { return m_Angle; }
+	glm::vec3 pointing() const;
 	glm::mat4 getViewMatrix();
 	glm::mat4 getViewMatrix(glm::vec3 targetPos);
 
+private:
 	glm::vec3 m_Pos;
 	glm::vec3 m_Angle;
-private:
 	glm::vec3 m_Pointing;
 	float m_FOV;
 };

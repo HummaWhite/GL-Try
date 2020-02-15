@@ -13,6 +13,7 @@
 #include "Renderer.h"
 #include "Texture.h"
 #include "Camera.h"
+#include "Lighting.h"
 
 const int W_WIDTH = 1280;
 const int W_HEIGHT = 720;
@@ -193,8 +194,15 @@ int main()
     VertexArray lightVa;
     lightVa.addBuffer(vb, layout);
     Shader lightShader("res/shader/light.shader");
-    glm::vec3 lightColor(1.0f, 1.0f, 1.0f);
-    glm::vec3 lightPos(0, 0, 4.0f);
+    LightGroup lights;
+    Light* light = new Light(Light::POINT, glm::vec3(0, 0, 4.0f), glm::vec3(1.0f, 1.0f, 1.0f));
+    Light* light2 = new Light(Light::POINT, glm::vec3(6.0f, -6.0f, 0), glm::vec3(1.0f, 0.0f, 1.0f));
+    Light* light3 = new Light(Light::POINT, glm::vec3(-4.0, -2.0f, -1.0f), glm::vec3(0.2f, 0.5f, 0.9f));
+    Light* light4 = new Light(Light::SPOT, glm::vec3(0, 0, 0), VEC_UP, glm::vec3(0.0f, 1.0f, 0.0f), 10.0f, 15.0f);
+    lights.add(light);
+    lights.add(light2);
+    lights.add(light3);
+    lights.add(light4);
 
     Renderer renderer;
     glEnable(GL_BLEND);
@@ -208,10 +216,10 @@ int main()
 
     glm::vec3 cubePositions[] =
     {
-        glm::vec3(0.0f,  0.0f,  0.0f),
-        glm::vec3(2.0f,  5.0f, -15.0f),
+        glm::vec3(-2.0f,  1.0f,  2.5f),
+        glm::vec3(2.0f,  10.0f, 0.0f),
         glm::vec3(-1.5f, -2.2f, -2.5f),
-        glm::vec3(-3.8f, -2.0f, -12.3f),
+        glm::vec3(-3.8f, 4.0f, -2.3f),
         glm::vec3(2.4f, -0.4f, -3.5f),
         glm::vec3(-1.7f,  3.0f, 7.5f),
         glm::vec3(1.3f, -2.0f, 2.5f),
@@ -220,9 +228,11 @@ int main()
         glm::vec3(-1.3f,  1.0f, -1.5f)
     };
 
+    glm::vec3 objectColor = glm::vec3(1.0f, 0.5f, 0.0f);
+
     while (!glfwWindowShouldClose(window))
     {
-        FPS.work();
+        //FPS.work();
         processInput(window);
 
         //renderer.clear(0.3f, 0.2f, 0.3f, 1.0f);
@@ -230,35 +240,49 @@ int main()
         
         float timeValue = glfwGetTime();
         float blueValue = sin(timeValue * 1.4f) / 2.0f + 0.5f;
-        float additionY = sin(timeValue * 3.0f) / 2.0f;
+        float additionY = sin(timeValue * 3.0f) * 6.0f;
         proj = glm::perspective(glm::radians(camera.FOV()), (float)W_WIDTH / (float)W_HEIGHT, 0.1f, 100.0f);
 
         shader.enable();
 
+        //light->pos.y = additionY;
         //shader.setUniform4f("vertexColor", 1.0f, 0.5f, blueValue, 1.0f);
-        shader.setUniform1f("additionY", additionY);
         shader.setUniformMat4("proj", proj);
         shader.setUniformMat4("view", camera.getViewMatrix());
-        shader.setUniformVec3("lightColor", lightColor);
-        shader.setUniformVec3("lightPos", lightPos);
-        
+        shader.setUniformVec3("viewPos", camera.pos());
+        shader.setLight(lights);
+        shader.setUniformVec3("material.ambient", objectColor * 0.1f);
+        shader.setUniformVec3("material.diffuse", objectColor);
+        shader.setUniformVec3("material.specular", objectColor);
+        shader.setUniform1f("material.shininess", 32.0f);
+
         for (int i = 0; i < 10; i++)
         {
             model = glm::mat4(1.0f);
             //model = glm::rotate(glm::mat4(1.0f), glm::radians(-55.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+            float scale = (float)i / 5 + 1;
             model = glm::translate(model, cubePositions[i]);
+            model = glm::scale(model, glm::vec3(scale, scale, scale));
             model = glm::rotate(model, glm::radians(timeValue * 30.0f * i + 20.0f * i), glm::vec3(1.0f, 0.3f, 0.5f));
             shader.setUniformMat4("model", model);
+            glm::mat3 modelInv = glm::mat3(glm::transpose(glm::inverse(model)));
+            shader.setUniformMat3("modelInv", modelInv);
             renderer.draw(va, shader);
         }
 
-        model = glm::translate(glm::mat4(1.0f), lightPos);
         lightShader.enable();
-        lightShader.setUniformMat4("model", model);
         lightShader.setUniformMat4("proj", proj);
         lightShader.setUniformMat4("view", camera.getViewMatrix());
-        lightShader.setUniformVec3("lightColor", lightColor);
-        renderer.draw(lightVa, lightShader);
+        light4->pos = camera.pos();
+        light4->dir = camera.pointing();
+        for (int i = 0; i < lights.count(); i++)
+        {
+            if (lights[i]->type != Light::POINT) continue;
+            model = glm::translate(glm::mat4(1.0f), lights[i]->pos);
+            lightShader.setUniformMat4("model", model);
+            lightShader.setUniformVec3("lightColor", lights[i]->color);
+            renderer.draw(lightVa, lightShader);
+        }
 
         glfwSwapBuffers(window);
         glfwPollEvents();
