@@ -19,3 +19,12 @@
 ![](https://github.com/HummaWhite/GL-Try/blob/master/%E7%BA%B9%E7%90%86/md-pics/OpenGL-Try%202020_2_15%2020_38_32.png)
 
 锥形聚光
+
+## 2.17
+
+![](https://github.com/HummaWhite/GL-Try/blob/master/%E7%BA%B9%E7%90%86/md-pics/OpenGL-Try%202020_2_17%2016_51_32%20(3).png)
+
+法向量标准化（之前漏掉了），这样反射光的亮度就不会因模型矩阵的放大而减弱了。
+
+搞了一个大正方体，不过要在shader里面把法向量反过来，不然反射光都显示在外侧（因为所有的正方体共用一个VAO）
+
