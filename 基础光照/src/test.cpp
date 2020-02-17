@@ -19,6 +19,7 @@ const int W_WIDTH = 1280;
 const int W_HEIGHT = 720;
 
 static Camera camera(glm::vec3(0, 0, -3));
+Light* spotLight = new Light(Light::SPOT, glm::vec3(0, 0, 0), VEC_UP, glm::vec3(1.0f, 1.0f, 1.0f), 10.0f, 12.5f, 6);
 
 struct FPSDetector
 {
@@ -94,6 +95,10 @@ void processInput(GLFWwindow* window)
         camera.move(GLFW_KEY_LEFT_SHIFT);
     if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS)
         camera.move(GLFW_KEY_SPACE);
+    if (glfwGetKey(window, GLFW_KEY_Q) == GLFW_PRESS)
+        spotLight->color = glm::vec3(1.0, 1.0, 1.0);
+    else
+        spotLight->color = glm::vec3(0.0f, 0.0f, 0.0f);
 }
 
 int main()
@@ -198,11 +203,18 @@ int main()
     Light* light = new Light(Light::POINT, glm::vec3(0, 0, 4.0f), glm::vec3(1.0f, 1.0f, 1.0f));
     Light* light2 = new Light(Light::POINT, glm::vec3(6.0f, -6.0f, 0), glm::vec3(1.0f, 0.0f, 1.0f));
     Light* light3 = new Light(Light::POINT, glm::vec3(-4.0, -2.0f, -1.0f), glm::vec3(0.2f, 0.5f, 0.9f));
-    Light* light4 = new Light(Light::SPOT, glm::vec3(0, 0, 0), VEC_UP, glm::vec3(0.0f, 1.0f, 0.0f), 10.0f, 15.0f);
     lights.add(light);
     lights.add(light2);
     lights.add(light3);
-    lights.add(light4);
+    lights.add(spotLight);
+    spotLight->setAttenuationLevel(8);
+    for (int i = 0; i < 5; i++)
+    {
+        glm::vec3 pos((rand() % 24) - 12, (rand() % 24) - 12, (rand() % 24) - 12);
+        glm::vec3 color((float)(rand() % 256) / 256, (float)(rand() % 256) / 256, (float)(rand() % 256) / 256);
+        Light* extraLight = new Light(Light::POINT, pos, color);
+        lights.add(extraLight);
+    }
 
     Renderer renderer;
     glEnable(GL_BLEND);
@@ -228,7 +240,7 @@ int main()
         glm::vec3(-1.3f,  1.0f, -1.5f)
     };
 
-    glm::vec3 objectColor = glm::vec3(1.0f, 0.5f, 0.0f);
+    glm::vec3 objectColor = glm::vec3(0.4f, 0.5f, 0.7f);
 
     while (!glfwWindowShouldClose(window))
     {
@@ -250,16 +262,14 @@ int main()
         shader.setUniformMat4("proj", proj);
         shader.setUniformMat4("view", camera.getViewMatrix());
         shader.setUniformVec3("viewPos", camera.pos());
+        shader.setUniform1f("normDir", 1.0);
         shader.setLight(lights);
-        shader.setUniformVec3("material.ambient", objectColor * 0.1f);
-        shader.setUniformVec3("material.diffuse", objectColor);
-        shader.setUniformVec3("material.specular", objectColor);
-        shader.setUniform1f("material.shininess", 32.0f);
+        shader.setMaterial(objectColor * 0.05f, objectColor * 0.8f, objectColor, 32.0f);
 
         for (int i = 0; i < 10; i++)
         {
             model = glm::mat4(1.0f);
-            //model = glm::rotate(glm::mat4(1.0f), glm::radians(-55.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+            model = glm::rotate(glm::mat4(1.0f), glm::radians(-55.0f), glm::vec3(0.0f, 0.0f, 1.0f));
             float scale = (float)i / 5 + 1;
             model = glm::translate(model, cubePositions[i]);
             model = glm::scale(model, glm::vec3(scale, scale, scale));
@@ -270,11 +280,21 @@ int main()
             renderer.draw(va, shader);
         }
 
+        model = glm::mat4(1.0f);
+        model = glm::scale(model, glm::vec3(40.0f, 40.0f, 40.0f));
+        glm::vec3 wallColor(1.0f, 1.0f, 1.0f);
+        shader.setUniformMat4("model", model);
+        glm::mat3 modelInv = glm::mat3(glm::transpose(glm::inverse(model)));
+        shader.setUniformMat3("modelInv", modelInv);
+        shader.setUniform1f("normDir", -1.0);
+        shader.setMaterial(wallColor * 0.2f, wallColor * 0.8f, wallColor * 0.5f, 32.0f);
+        renderer.draw(va, shader);
+
         lightShader.enable();
         lightShader.setUniformMat4("proj", proj);
         lightShader.setUniformMat4("view", camera.getViewMatrix());
-        light4->pos = camera.pos();
-        light4->dir = camera.pointing();
+        spotLight->pos = camera.pos();
+        spotLight->dir = camera.pointing();
         for (int i = 0; i < lights.count(); i++)
         {
             if (lights[i]->type != Light::POINT) continue;

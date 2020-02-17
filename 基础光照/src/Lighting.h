@@ -8,7 +8,7 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
-const GLuint NORMAL_ATTENUATION_LEVEL = 5;
+const GLuint NORMAL_ATTENUATION_LEVEL = 4;
 const glm::vec3 ATTENUATION[] =
 {
 	glm::vec3(1, 0.7, 1.8),        //7
@@ -49,6 +49,11 @@ public:
 		float _cutOff, float _outerCutOff, GLuint attenLevel = NORMAL_ATTENUATION_LEVEL) :
 		type(_type), pos(_pos), dir(_dir), color(_color), cutOff(cos(glm::radians(_cutOff))),
 		outerCutOff(cos(glm::radians(_outerCutOff))), attenuation(ATTENUATION[attenLevel]) {}
+	void setAttenuationLevel(GLuint level)
+	{
+		if (level > 11) return;
+		attenuation = ATTENUATION[level];
+	}
 };
 
 class LightGroup

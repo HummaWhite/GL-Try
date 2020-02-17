@@ -28,6 +28,8 @@ public:
 	void setUniformMat3(const char* name, const glm::mat3& mat) const;
 	void setUniformMat4(const char* name, const glm::mat4& mat) const;
 	void setLight(const LightGroup& lightGroup);
+	void setMaterial(const glm::vec3& ambient, const glm::vec3& diffuse,
+		const glm::vec3 specular, float shininess);
 private:
 	void compileShader(const char* vertexSource, const char* fragmentSource, const char* geometrySource);
 	GLint getUniformLocation(const char* name) const;

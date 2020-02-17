@@ -166,6 +166,14 @@ void Shader::setLight(const LightGroup& lightGroup)
 	if (spotCount > 0) setUniform1i("spotLightsCount", spotCount);
 }
 
+void Shader::setMaterial(const glm::vec3& ambient, const glm::vec3& diffuse, const glm::vec3 specular, float shininess)
+{
+	setUniformVec3("material.ambient", ambient);
+	setUniformVec3("material.diffuse", diffuse);
+	setUniformVec3("material.specular", specular);
+	setUniform1f("material.shininess", shininess);
+}
+
 void Shader::compileShader(const char* vertexSource, const char* fragmentSource, const char* geometrySource)
 {
 	GLuint vertexShader = glCreateShader(GL_VERTEX_SHADER);

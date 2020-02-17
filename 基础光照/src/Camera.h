@@ -9,7 +9,7 @@
 
 const float CAMERA_ROTATE_SENSITIVITY = 0.05f;
 const float CAMERA_MOVE_SENSITIVITY = 0.1f;
-const float CAMERA_FOV_SENSITIVITY = 1.0f;
+const float CAMERA_FOV_SENSITIVITY = 5.0f;
 const float CAMERA_PITCH_LIMIT = 88.0f;
 const float CAMERA_FOV = 45.0f;
 const glm::vec3 VEC_UP = glm::vec3(0.0f, 0.0f, 1.0f);

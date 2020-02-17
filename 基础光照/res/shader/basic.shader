@@ -8,6 +8,7 @@ uniform mat4 model;
 uniform mat4 view;
 uniform mat4 proj;
 uniform mat3 modelInv;
+uniform float normDir;
 
 out vec2 texCoord;
 out vec3 fragPos;
@@ -18,15 +19,15 @@ void main()
     mat4 transform = proj * view * model;
     gl_Position = transform * vec4(pos, 1.0f);
     fragPos = vec3(model * vec4(pos, 1.0));
-    normal = modelInv * aNormal;
+    normal =  normalize(modelInv * aNormal * normDir);
     texCoord = aTexCoord;
 }
 
 //$Fragment
 #version 330 core
 const int MAX_LIGHTS_DIR = 2;
-const int MAX_LIGHTS_POINT = 5;
-const int MAX_LIGHTS_SPOT = 5;
+const int MAX_LIGHTS_POINT = 8;
+const int MAX_LIGHTS_SPOT = 8;
 const float AMBIENT_STRENGTH = 0.1f;
 
 struct Material
