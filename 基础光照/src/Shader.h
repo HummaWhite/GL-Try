@@ -30,6 +30,7 @@ public:
 	void setLight(const LightGroup& lightGroup);
 	void setMaterial(const glm::vec3& ambient, const glm::vec3& diffuse,
 		const glm::vec3 specular, float shininess);
+	void useModelMatrix(const glm::mat4& model);
 private:
 	void compileShader(const char* vertexSource, const char* fragmentSource, const char* geometrySource);
 	GLint getUniformLocation(const char* name) const;

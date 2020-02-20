@@ -29,6 +29,8 @@ const int MAX_LIGHTS_DIR = 2;
 const int MAX_LIGHTS_POINT = 8;
 const int MAX_LIGHTS_SPOT = 8;
 const float AMBIENT_STRENGTH = 0.1f;
+const float NEAR = 0.1;
+const float FAR = 100.0;
 
 struct Material
 {
@@ -36,6 +38,9 @@ struct Material
     vec3 diffuse;
     vec3 specular;
     float shininess;
+    sampler2D diffuseTex;
+    sampler2D specularTex;
+    sampler2D normalMap;
 };
 
 struct DirLight
@@ -123,6 +128,12 @@ vec3 calcSpotLight(SpotLight light, vec3 norm, vec3 fragPos, vec3 viewDir)
     float epsilon = light.cutOff - light.outerCutOff;
     float intensity = clamp((theta - light.outerCutOff) / epsilon, 0.0, 1.0);
     return (ambient + diffuse + specular) * intensity * attenuation;
+}
+
+float linearDepth(float depth)
+{
+    float z = depth * 2.0 - 1.0;
+    return (2.0 * NEAR * FAR) / (FAR + NEAR - z * (FAR - NEAR));
 }
 
 void main()

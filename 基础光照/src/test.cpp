@@ -14,12 +14,15 @@
 #include "Texture.h"
 #include "Camera.h"
 #include "Lighting.h"
+#include "Shape.h"
 
 const int W_WIDTH = 1280;
 const int W_HEIGHT = 720;
 
+static Renderer renderer;
 static Camera camera(glm::vec3(0, 0, -3));
 Light* spotLight = new Light(Light::SPOT, glm::vec3(0, 0, 0), VEC_UP, glm::vec3(1.0f, 1.0f, 1.0f), 10.0f, 12.5f, 6);
+bool cursorDisabled = 1, F1Pressed = 0;
 
 struct FPSDetector
 {
@@ -59,6 +62,7 @@ bool first = 1;
 
 void mouseCallback(GLFWwindow* window, double xpos, double ypos)
 {
+    if (!cursorDisabled) return;
     if (first == 1)
     {
         lastCursorX = xpos;
@@ -99,6 +103,22 @@ void processInput(GLFWwindow* window)
         spotLight->color = glm::vec3(1.0, 1.0, 1.0);
     else
         spotLight->color = glm::vec3(0.0f, 0.0f, 0.0f);
+    if (glfwGetKey(window, GLFW_KEY_F1) == GLFW_PRESS)
+    {
+        F1Pressed = 1;
+    }
+    if (glfwGetKey(window, GLFW_KEY_F1) == GLFW_RELEASE)
+    {
+        if (F1Pressed)
+        {
+            if (cursorDisabled)
+                glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+            else
+                glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+            cursorDisabled ^= 1;
+            F1Pressed = 0;
+        }
+    }
 }
 
 int main()
@@ -216,7 +236,20 @@ int main()
         lights.add(extraLight);
     }
 
-    Renderer renderer;
+    int coneFaces = 360;
+    float* cone = createCone(coneFaces, 1.0f, 1.0f);
+    VertexBuffer coneVb(cone, coneFaces * 3, coneFaces * 3 * 8 * sizeof(float));
+    VertexArray coneVa;
+    coneVa.addBuffer(coneVb, layout);
+    delete[]cone;
+
+    int columns = 12, rows = 6;
+    float* sphere = createSphere(columns, rows, 1.0f);
+    VertexBuffer sphereVb(sphere, columns * rows * 6, columns * rows * 6 * 8 * sizeof(float));
+    VertexArray sphereVa;
+    sphereVa.addBuffer(sphereVb, layout);
+    delete[]sphere;
+
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     glEnable(GL_DEPTH_TEST);
@@ -244,27 +277,21 @@ int main()
 
     while (!glfwWindowShouldClose(window))
     {
-        //FPS.work();
+        FPS.work();
         processInput(window);
-
-        //renderer.clear(0.3f, 0.2f, 0.3f, 1.0f);
         renderer.clear(0.0f, 0.0f, 0.0f);
         
         float timeValue = glfwGetTime();
-        float blueValue = sin(timeValue * 1.4f) / 2.0f + 0.5f;
         float additionY = sin(timeValue * 3.0f) * 6.0f;
         proj = glm::perspective(glm::radians(camera.FOV()), (float)W_WIDTH / (float)W_HEIGHT, 0.1f, 100.0f);
 
         shader.enable();
-
-        //light->pos.y = additionY;
-        //shader.setUniform4f("vertexColor", 1.0f, 0.5f, blueValue, 1.0f);
         shader.setUniformMat4("proj", proj);
         shader.setUniformMat4("view", camera.getViewMatrix());
         shader.setUniformVec3("viewPos", camera.pos());
         shader.setUniform1f("normDir", 1.0);
         shader.setLight(lights);
-        shader.setMaterial(objectColor * 0.05f, objectColor * 0.8f, objectColor, 32.0f);
+        shader.setMaterial(objectColor * 0.05f, objectColor * 0.8f, objectColor, 16.0f);
 
         for (int i = 0; i < 10; i++)
         {
@@ -274,23 +301,20 @@ int main()
             model = glm::translate(model, cubePositions[i]);
             model = glm::scale(model, glm::vec3(scale, scale, scale));
             model = glm::rotate(model, glm::radians(timeValue * 30.0f * i + 20.0f * i), glm::vec3(1.0f, 0.3f, 0.5f));
-            shader.setUniformMat4("model", model);
-            glm::mat3 modelInv = glm::mat3(glm::transpose(glm::inverse(model)));
-            shader.setUniformMat3("modelInv", modelInv);
-            renderer.draw(va, shader);
+            shader.useModelMatrix(model);
+            renderer.draw(coneVa, shader);
         }
 
         model = glm::mat4(1.0f);
         model = glm::scale(model, glm::vec3(40.0f, 40.0f, 40.0f));
         glm::vec3 wallColor(1.0f, 1.0f, 1.0f);
-        shader.setUniformMat4("model", model);
-        glm::mat3 modelInv = glm::mat3(glm::transpose(glm::inverse(model)));
-        shader.setUniformMat3("modelInv", modelInv);
+        shader.useModelMatrix(model);
         shader.setUniform1f("normDir", -1.0);
         shader.setMaterial(wallColor * 0.2f, wallColor * 0.8f, wallColor * 0.5f, 32.0f);
         renderer.draw(va, shader);
 
         lightShader.enable();
+        light->pos.y = additionY;
         lightShader.setUniformMat4("proj", proj);
         lightShader.setUniformMat4("view", camera.getViewMatrix());
         spotLight->pos = camera.pos();
@@ -300,8 +324,8 @@ int main()
             if (lights[i]->type != Light::POINT) continue;
             model = glm::translate(glm::mat4(1.0f), lights[i]->pos);
             lightShader.setUniformMat4("model", model);
-            lightShader.setUniformVec3("lightColor", lights[i]->color);
-            renderer.draw(lightVa, lightShader);
+            lightShader.setUniformVec3("lightColor", glm::length(lights[i]->color) * glm::normalize(lights[i]->color));
+            renderer.draw(va, lightShader);
         }
 
         glfwSwapBuffers(window);

@@ -174,6 +174,13 @@ void Shader::setMaterial(const glm::vec3& ambient, const glm::vec3& diffuse, con
 	setUniform1f("material.shininess", shininess);
 }
 
+void Shader::useModelMatrix(const glm::mat4& model)
+{
+	setUniformMat4("model", model);
+	glm::mat3 modelInv = glm::mat3(glm::transpose(glm::inverse(model)));
+	setUniformMat3("modelInv", modelInv);
+}
+
 void Shader::compileShader(const char* vertexSource, const char* fragmentSource, const char* geometrySource)
 {
 	GLuint vertexShader = glCreateShader(GL_VERTEX_SHADER);
@@ -218,6 +225,7 @@ void Shader::compileShader(const char* vertexSource, const char* fragmentSource,
 
 GLint Shader::getUniformLocation(const char* name) const
 {
+	glUseProgram(ID);
 	GLint location = glGetUniformLocation(ID, name);
 	if (location == -1)
 		std::cout << "Error: unable to locate the uniform::" << name << std::endl;
