@@ -28,3 +28,10 @@
 
 搞了一个大正方体，不过要在shader里面把法向量反过来，不然反射光都显示在外侧（因为所有的正方体共用一个VAO）
 
+## 2.19
+
+![](https://github.com/HummaWhite/GL-Try/blob/master/%E7%BA%B9%E7%90%86/md-pics/OpenGL-Try%202020_2_19%2011_55_56.png)
+
+![](https://github.com/HummaWhite/GL-Try/blob/master/%E7%BA%B9%E7%90%86/md-pics/OpenGL-Try%202020_2_19%2012_53_03.png)
+
+试着生成了锥体和球体的顶点法向量数据，观察光照情况。（现代管线的VAO就是厉害，渲染千万级别的三角面（10个球面，每个球面分为2 * 1080 * 540个三角形）也能稳在30帧以上，不过预先把这么多的顶点数据传到显存要花点时间）
