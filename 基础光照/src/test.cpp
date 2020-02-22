@@ -1,4 +1,5 @@
 #include <iostream>
+#include <string>
 #include <ctime>
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
@@ -15,27 +16,18 @@
 #include "Camera.h"
 #include "Lighting.h"
 #include "Shape.h"
+#include "FPSTimer.h"
+#include "VerticalSync.h"
+#include "FrameBuffer.h"
 
 const int W_WIDTH = 1280;
 const int W_HEIGHT = 720;
 
 static Renderer renderer;
 static Camera camera(glm::vec3(0, 0, -3));
+static FPSTimer fpsTimer;
 Light* spotLight = new Light(Light::SPOT, glm::vec3(0, 0, 0), VEC_UP, glm::vec3(1.0f, 1.0f, 1.0f), 10.0f, 12.5f, 6);
 bool cursorDisabled = 1, F1Pressed = 0;
-
-struct FPSDetector
-{
-    FPSDetector() : lastT(0) {}
-    void work()
-    {
-        clock_t intv = clock() - lastT;
-        if (intv != 0)
-            std::cout << (float)intv / CLOCKS_PER_SEC << " " << (float)CLOCKS_PER_SEC / intv << "\n";
-        lastT = clock();
-    }
-    clock_t lastT;
-} FPS;
 
 void initGLFWdata();
 void framebufferSizeCallback(GLFWwindow* window, int width, int height);
@@ -146,74 +138,24 @@ int main()
     glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
     glfwSetCursorPosCallback(window, mouseCallback);
     glfwSetScrollCallback(window, scrollCallback);
+    VerticalSyncStatus(false);
 
-    float vertices[] =
-    {
-        -0.5f, -0.5f, -0.5f,  0.0f, 0.0f,  0.0f, 0.0f, -1.0f,
-         0.5f, -0.5f, -0.5f,  1.0f, 0.0f,  0.0f, 0.0f, -1.0f,
-         0.5f,  0.5f, -0.5f,  1.0f, 1.0f,  0.0f, 0.0f, -1.0f,
-         0.5f,  0.5f, -0.5f,  1.0f, 1.0f,  0.0f, 0.0f, -1.0f,
-        -0.5f,  0.5f, -0.5f,  0.0f, 1.0f,  0.0f, 0.0f, -1.0f,
-        -0.5f, -0.5f, -0.5f,  0.0f, 0.0f,  0.0f, 0.0f, -1.0f,
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    glEnable(GL_DEPTH_TEST);
+    glDepthFunc(GL_LEQUAL);
 
-        -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,  0.0f, 0.0f,  1.0f,
-         0.5f, -0.5f,  0.5f,  1.0f, 0.0f,  0.0f, 0.0f,  1.0f,
-         0.5f,  0.5f,  0.5f,  1.0f, 1.0f,  0.0f, 0.0f,  1.0f,
-         0.5f,  0.5f,  0.5f,  1.0f, 1.0f,  0.0f, 0.0f,  1.0f,
-        -0.5f,  0.5f,  0.5f,  0.0f, 1.0f,  0.0f, 0.0f,  1.0f,
-        -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,  0.0f, 0.0f,  1.0f,
-
-        -0.5f,  0.5f,  0.5f,  1.0f, 0.0f,  -1.0f, 0.0f, 0.0f,
-        -0.5f,  0.5f, -0.5f,  1.0f, 1.0f,  -1.0f, 0.0f, 0.0f,
-        -0.5f, -0.5f, -0.5f,  0.0f, 1.0f,  -1.0f, 0.0f, 0.0f,
-        -0.5f, -0.5f, -0.5f,  0.0f, 1.0f,  -1.0f, 0.0f, 0.0f,
-        -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,  -1.0f, 0.0f, 0.0f,
-        -0.5f,  0.5f,  0.5f,  1.0f, 0.0f,  -1.0f, 0.0f, 0.0f,
-
-         0.5f,  0.5f,  0.5f,  1.0f, 0.0f,   1.0f, 0.0f, 0.0f,
-         0.5f,  0.5f, -0.5f,  1.0f, 1.0f,   1.0f, 0.0f, 0.0f,
-         0.5f, -0.5f, -0.5f,  0.0f, 1.0f,   1.0f, 0.0f, 0.0f,
-         0.5f, -0.5f, -0.5f,  0.0f, 1.0f,   1.0f, 0.0f, 0.0f,
-         0.5f, -0.5f,  0.5f,  0.0f, 0.0f,   1.0f, 0.0f, 0.0f,
-         0.5f,  0.5f,  0.5f,  1.0f, 0.0f,   1.0f, 0.0f, 0.0f,
-
-        -0.5f, -0.5f, -0.5f,  0.0f, 1.0f,  0.0f, -1.0f, 0.0f,
-         0.5f, -0.5f, -0.5f,  1.0f, 1.0f,  0.0f, -1.0f, 0.0f,
-         0.5f, -0.5f,  0.5f,  1.0f, 0.0f,  0.0f, -1.0f, 0.0f,
-         0.5f, -0.5f,  0.5f,  1.0f, 0.0f,  0.0f, -1.0f, 0.0f,
-        -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,  0.0f, -1.0f, 0.0f,
-        -0.5f, -0.5f, -0.5f,  0.0f, 1.0f,  0.0f, -1.0f, 0.0f,
-
-        -0.5f,  0.5f, -0.5f,  0.0f, 1.0f,  0.0f,  1.0f, 0.0f,
-         0.5f,  0.5f, -0.5f,  1.0f, 1.0f,  0.0f,  1.0f, 0.0f,
-         0.5f,  0.5f,  0.5f,  1.0f, 0.0f,  0.0f,  1.0f, 0.0f,
-         0.5f,  0.5f,  0.5f,  1.0f, 0.0f,  0.0f,  1.0f, 0.0f,
-        -0.5f,  0.5f,  0.5f,  0.0f, 0.0f,  0.0f,  1.0f, 0.0f,
-        -0.5f,  0.5f, -0.5f,  0.0f, 1.0f,  0.0f,  1.0f, 0.0f
-    };
-
-
-    GLuint indices[] =
-    {
-        0, 1, 2, 2, 3, 0,
-        4, 5, 6, 5, 6, 7,
-        3, 0, 4, 0, 4, 7,
-        2, 1, 5, 1, 5, 6,
-        0, 1, 5, 1, 5, 4,
-        3, 2, 6, 2, 6, 7
-    };
-
-    VertexBuffer vb(vertices, 36, sizeof(vertices));
+    VertexBuffer vb(CUBE_VERTICES, 36, sizeof(CUBE_VERTICES));
     VertexBufferLayout layout;
     layout.add<float>(3);
     layout.add<float>(2);
     layout.add<float>(3);
     VertexArray va;
     va.addBuffer(vb, layout);
-    IndexBuffer eb(indices, 36);
     Shader shader("res/shader/basic.shader");
-    Texture texture("res/texture/tex.png");
-    texture.bind();
+
+    //Texture texture("res/texture/tex.png");
+    //texture.bind();
     //shader.setUniform1i("u_Texture", 0);
 
     VertexArray lightVa;
@@ -236,23 +178,40 @@ int main()
         lights.add(extraLight);
     }
 
-    int coneFaces = 360;
-    float* cone = createCone(coneFaces, 1.0f, 1.0f);
-    VertexBuffer coneVb(cone, coneFaces * 3, coneFaces * 3 * 8 * sizeof(float));
-    VertexArray coneVa;
-    coneVa.addBuffer(coneVb, layout);
-    delete[]cone;
-
-    int columns = 12, rows = 6;
+    int columns = 4, rows = 2;
     float* sphere = createSphere(columns, rows, 1.0f);
     VertexBuffer sphereVb(sphere, columns * rows * 6, columns * rows * 6 * 8 * sizeof(float));
     VertexArray sphereVa;
     sphereVa.addBuffer(sphereVb, layout);
     delete[]sphere;
 
-    glEnable(GL_BLEND);
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-    glEnable(GL_DEPTH_TEST);
+    FrameBuffer depthBuffer;
+
+    VertexBuffer skyboxVb(SKYBOX_VERTICES, 36, sizeof(SKYBOX_VERTICES));
+    VertexBufferLayout skyboxLayout;
+    skyboxLayout.add<GL_FLOAT>(3);
+    VertexArray skyboxVa;
+    skyboxVa.addBuffer(skyboxVb, skyboxLayout);
+    std::vector<std::string> skyboxPath =
+    {
+        "res/texture/skybox/right.jpg",
+        "res/texture/skybox/left.jpg",
+        "res/texture/skybox/top.jpg",
+        "res/texture/skybox/bottom.jpg",
+        "res/texture/skybox/front.jpg",
+        "res/texture/skybox/back.jpg"
+    };
+    Texture skyboxTexture;
+    skyboxTexture.loadCube(skyboxPath);
+    Shader skyboxShader("res/shader/skybox.shader");
+    skyboxTexture.bind(0);
+    skyboxShader.setUniform1i("skybox", 0);
+    glm::mat4 skyboxModel = glm::rotate(glm::mat4(1.0f), glm::radians(90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+    skyboxShader.setUniformMat4("model", skyboxModel);
+
+    Texture depthBufferTex;
+    depthBufferTex.bind(1);
+    depthBufferTex.attachDepthBufferCube(depthBuffer);
 
     glm::mat4 model(1.0f);
     glm::mat4 view(1.0f);
@@ -274,17 +233,64 @@ int main()
     };
 
     glm::vec3 objectColor = glm::vec3(0.4f, 0.5f, 0.7f);
+    Shader shadowShader("res/shader/shadow.shader");
 
     while (!glfwWindowShouldClose(window))
     {
-        FPS.work();
+        fpsTimer.work();
         processInput(window);
         renderer.clear(0.0f, 0.0f, 0.0f);
         
         float timeValue = glfwGetTime();
         float additionY = sin(timeValue * 3.0f) * 6.0f;
         proj = glm::perspective(glm::radians(camera.FOV()), (float)W_WIDTH / (float)W_HEIGHT, 0.1f, 100.0f);
+        light->pos.y = additionY;
 
+
+        float aspect = (float)Texture::SHADOW_WIDTH / (float)Texture::SHADOW_HEIGHT;
+        float shadowNear = 0.1f;
+        float shadowFar = 50.0f;
+        glm::mat4 shadowProj = glm::perspective(glm::radians(90.0f), aspect, shadowNear, shadowFar);
+        std::vector<glm::mat4> shadowTransforms;
+        glm::vec3 lightPos = light->pos;
+        shadowTransforms.push_back(shadowProj * glm::lookAt(lightPos, lightPos + glm::vec3(1.0, 0.0, 0.0), glm::vec3(0.0, -1.0, 0.0)));
+        shadowTransforms.push_back(shadowProj * glm::lookAt(lightPos, lightPos + glm::vec3(-1.0, 0.0, 0.0), glm::vec3(0.0, -1.0, 0.0)));
+        shadowTransforms.push_back(shadowProj * glm::lookAt(lightPos, lightPos + glm::vec3(0.0, 1.0, 0.0), glm::vec3(0.0, 0.0, 1.0)));
+        shadowTransforms.push_back(shadowProj * glm::lookAt(lightPos, lightPos + glm::vec3(0.0, -1.0, 0.0), glm::vec3(0.0, 0.0, -1.0)));
+        shadowTransforms.push_back(shadowProj * glm::lookAt(lightPos, lightPos + glm::vec3(0.0, 0.0, 1.0), glm::vec3(0.0, -1.0, 0.0)));
+        shadowTransforms.push_back(shadowProj * glm::lookAt(lightPos, lightPos + glm::vec3(0.0, 0.0, -1.0), glm::vec3(0.0, -1.0, 0.0)));
+
+        glViewport(0, 0, Texture::SHADOW_HEIGHT, Texture::SHADOW_WIDTH);
+        depthBuffer.bind();
+        glClear(GL_DEPTH_BUFFER_BIT);
+        shadowShader.enable();
+        for (int i = 0; i < 6; i++)
+            shadowShader.setUniformMat4(("shadowMatrices[" + std::to_string(i) + "]").c_str(), shadowTransforms[i]);
+        shadowShader.setUniform1f("farPlane", shadowFar);
+        shadowShader.setUniformVec3("lightPos", lightPos);
+        for (int i = 0; i < 6; i++)
+        {
+            model = glm::mat4(1.0f);
+            model = glm::rotate(glm::mat4(1.0f), glm::radians(-55.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+            float scale = (float)i / 5 + 1;
+            model = glm::translate(model, cubePositions[i]);
+            model = glm::scale(model, glm::vec3(scale, scale, scale));
+            model = glm::rotate(model, glm::radians(timeValue * 30.0f * i + 20.0f * i), glm::vec3(1.0f, 0.3f, 0.5f));
+            shadowShader.setUniformMat4("model", model);
+            renderer.draw(sphereVa, shadowShader);
+        }
+        depthBuffer.unbind();
+
+        glViewport(0, 0, W_WIDTH, W_HEIGHT);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+        /*skyboxShader.enable();
+        skyboxShader.setUniform1i("skybox", 1);
+        skyboxShader.setUniformMat4("proj", proj);
+        skyboxShader.setUniformMat4("view", glm::mat4(glm::mat3(camera.getViewMatrix())));
+        renderer.draw(skyboxVa, skyboxShader);*/
+
+        depthBufferTex.bind(1);
         shader.enable();
         shader.setUniformMat4("proj", proj);
         shader.setUniformMat4("view", camera.getViewMatrix());
@@ -292,8 +298,10 @@ int main()
         shader.setUniform1f("normDir", 1.0);
         shader.setLight(lights);
         shader.setMaterial(objectColor * 0.05f, objectColor * 0.8f, objectColor, 16.0f);
+        shader.setUniform1i("depthMap", 1);
+        shader.setUniform1f("farPlane", shadowFar);
 
-        for (int i = 0; i < 10; i++)
+        for (int i = 0; i < 6; i++)
         {
             model = glm::mat4(1.0f);
             model = glm::rotate(glm::mat4(1.0f), glm::radians(-55.0f), glm::vec3(0.0f, 0.0f, 1.0f));
@@ -302,7 +310,7 @@ int main()
             model = glm::scale(model, glm::vec3(scale, scale, scale));
             model = glm::rotate(model, glm::radians(timeValue * 30.0f * i + 20.0f * i), glm::vec3(1.0f, 0.3f, 0.5f));
             shader.useModelMatrix(model);
-            renderer.draw(coneVa, shader);
+            renderer.draw(sphereVa, shader);
         }
 
         model = glm::mat4(1.0f);
@@ -314,7 +322,6 @@ int main()
         renderer.draw(va, shader);
 
         lightShader.enable();
-        light->pos.y = additionY;
         lightShader.setUniformMat4("proj", proj);
         lightShader.setUniformMat4("view", camera.getViewMatrix());
         spotLight->pos = camera.pos();

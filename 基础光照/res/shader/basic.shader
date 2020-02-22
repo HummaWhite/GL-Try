@@ -80,6 +80,8 @@ uniform PointLight pointLights[MAX_LIGHTS_POINT];
 uniform SpotLight spotLights[MAX_LIGHTS_SPOT];
 uniform vec3 viewPos;
 uniform vec4 vertexColor;
+uniform samplerCube depthMap;
+uniform float farPlane;
 
 vec3 calcDirLight(DirLight light, vec3 norm, vec3 viewDir)
 {
@@ -91,6 +93,17 @@ vec3 calcDirLight(DirLight light, vec3 norm, vec3 viewDir)
     vec3 diffuse = light.color * material.diffuse * diff;
     vec3 specular = light.color * (spec * material.specular);
     return ambient + diffuse + specular;
+}
+
+float calcPointLightShadow(vec3 fragPos, vec3 lightPos)
+{
+    vec3 fragToLight = fragPos - lightPos;
+    float closestDepth = texture(depthMap, fragToLight).r;
+    closestDepth *= farPlane;
+    float currentDepth = length(fragToLight);
+    float bias = 0.05;
+    float shadow = currentDepth - bias > closestDepth ? 1.0 : 0.0;
+    return shadow;
 }
 
 vec3 calcPointLight(PointLight light, vec3 norm, vec3 fragPos, vec3 viewDir)
@@ -107,7 +120,8 @@ vec3 calcPointLight(PointLight light, vec3 norm, vec3 fragPos, vec3 viewDir)
     vec3 ambient = light.color * material.ambient;
     vec3 diffuse = light.color * material.diffuse * diff;
     vec3 specular = light.color * (spec * material.specular);
-    return (ambient + diffuse + specular) * attenuation;
+    float shadow = calcPointLightShadow(fragPos, light.pos);
+    return (ambient + (1.0 - shadow) * (diffuse + specular)) * attenuation;
 }
 
 vec3 calcSpotLight(SpotLight light, vec3 norm, vec3 fragPos, vec3 viewDir)

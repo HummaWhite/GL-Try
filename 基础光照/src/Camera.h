@@ -6,6 +6,7 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
+#include "FPSTimer.h"
 
 const float CAMERA_ROTATE_SENSITIVITY = 0.05f;
 const float CAMERA_MOVE_SENSITIVITY = 0.1f;
@@ -17,13 +18,16 @@ const glm::vec3 VEC_UP = glm::vec3(0.0f, 0.0f, 1.0f);
 class Camera
 {
 public:
-	Camera(glm::vec3 pos = glm::vec3(0, 0, 0), glm::vec3 angle = glm::vec3(glm::radians(90.0f), 0.0f, 0.0f))
+	Camera(glm::vec3 pos = glm::vec3(0, 0, 0), glm::vec3 angle = glm::radians(glm::vec3(90.0f, 0.0f, 0.0f)))
 		:m_Pos(pos), m_Angle(angle), m_FOV(CAMERA_FOV) {}
 
 	void move(glm::vec3 vect);
 	void move(GLuint key);
 	void rotate(glm::vec3 angle);
 	void changeFOV(float offset);
+	void setPos(glm::vec3 pos) { m_Pos = pos; }
+	void setAngle(glm::vec3 angle) { m_Angle = angle; }
+	void setDir(glm::vec3 dir);
 
 	float FOV() const { return m_FOV; }
 	glm::vec3 pos() const { return m_Pos; }

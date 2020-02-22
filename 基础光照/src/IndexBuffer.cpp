@@ -6,6 +6,7 @@ IndexBuffer::IndexBuffer(const GLuint* data, GLuint count, GLenum type)
 	glGenBuffers(1, &ID);
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ID);
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER, count * sizeof(GLuint), data, type);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 }
 
 IndexBuffer::~IndexBuffer()

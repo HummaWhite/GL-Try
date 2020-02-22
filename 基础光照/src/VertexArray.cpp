@@ -4,7 +4,7 @@ VertexArray::VertexArray()
 	:m_VerticesCount(0)
 {
 	glGenVertexArrays(1, &ID);
-	glBindVertexArray(ID);
+	//glBindVertexArray(ID);
 }
 
 VertexArray::~VertexArray()
@@ -14,6 +14,7 @@ VertexArray::~VertexArray()
 
 void VertexArray::addBuffer(const VertexBuffer& vb, const VertexBufferLayout& layout)
 {
+	bind();
 	vb.bind();
 	const auto& elements = layout.elements();
 	GLuint offset = 0;
