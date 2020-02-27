@@ -35,3 +35,15 @@
 ![](https://github.com/HummaWhite/GL-Try/blob/master/%E7%BA%B9%E7%90%86/md-pics/OpenGL-Try%202020_2_19%2012_53_03.png)
 
 试着生成了锥体和球体的顶点法向量数据，观察光照情况。（现代管线的VAO就是厉害，渲染千万级别的三角面（10个球面，每个球面分为2 * 1080 * 540个三角形）也能稳在50帧以上，不过预先把这么多的顶点数据传到显存要花点时间）
+
+## 2.22
+
+![](https://github.com/HummaWhite/GL-Try/blob/master/%E7%BA%B9%E7%90%86/md-pics/OpenGL-Try%202020_2_21%2017_35_36.png)
+
+天空盒，用cubemap贴图。但是不知道为什么贴出来整个旋转了90度（坐标系统没问题啊……），必须旋转模型矩阵修正
+
+![](https://github.com/HummaWhite/GL-Try/blob/master/%E7%BA%B9%E7%90%86/md-pics/OpenGL-Try%202020_2_23%2013_04_45.png)
+
+通过depthmap的方法艰难地搞出了动态点阴影（在几何着色器里面不慎把j打成i让我查了好久的错）。目前代码已经成shi山了，想做多光源阴影还是要等把代码优化一下。
+
+此外，查到了设置垂直同步的方法。VerticalSync(bool)函数可以开关垂直同步。关了之后帧数能有500+
