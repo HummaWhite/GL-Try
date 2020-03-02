@@ -118,10 +118,9 @@ void Shader::setUniformMat4(const char* name, const glm::mat4& mat) const
 
 void Shader::setLight(const LightGroup& lightGroup)
 {
-	const auto& lights = lightGroup.lights();
 	GLuint dirCount(0), pointCount(0), spotCount(0);
 	char tmp[50];
-	for (auto light : lights)
+	for (auto light : lightGroup)
 	{
 		if (light == nullptr) continue;
 		switch (light->type)

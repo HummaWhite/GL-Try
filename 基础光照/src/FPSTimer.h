@@ -13,7 +13,7 @@ public:
     {
         if (clock() - lastT > CLOCKS_PER_SEC)
         {
-            std::cout << "FPS: " << count << std::endl;
+            std::cout << "FPS: " << count << "  RT: " << 1000.0f / (float)count << " ms" << std::endl;
             fps = count;
             reset();
         }

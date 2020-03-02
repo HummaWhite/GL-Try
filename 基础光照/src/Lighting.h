@@ -56,22 +56,4 @@ public:
 	}
 };
 
-class LightGroup
-{
-public:
-	LightGroup() : m_Count(0) {}
-	void add(Light* light)
-	{
-		m_Lights.push_back(light);
-		m_Count++;
-	}
-	std::vector<Light*> lights() const
-	{
-		return m_Lights;
-	}
-	GLuint count() const { return m_Count; }
-	Light* operator [] (int x) const { return m_Lights[x]; }
-private:
-	std::vector<Light*> m_Lights;
-	GLuint m_Count;
-};
+typedef std::vector<Light*> LightGroup;

@@ -138,7 +138,7 @@ int main()
     glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
     glfwSetCursorPosCallback(window, mouseCallback);
     glfwSetScrollCallback(window, scrollCallback);
-    VerticalSyncStatus(false);
+    VerticalSyncStatus(true);
 
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -162,30 +162,29 @@ int main()
     lightVa.addBuffer(vb, layout);
     Shader lightShader("res/shader/light.shader");
     LightGroup lights;
+    const int pointLightCount = 8;
     Light* light = new Light(Light::POINT, glm::vec3(0, 0, 4.0f), glm::vec3(1.0f, 1.0f, 1.0f));
     Light* light2 = new Light(Light::POINT, glm::vec3(6.0f, -6.0f, 0), glm::vec3(1.0f, 0.0f, 1.0f));
     Light* light3 = new Light(Light::POINT, glm::vec3(-4.0, -2.0f, -1.0f), glm::vec3(0.2f, 0.5f, 0.9f));
-    lights.add(light);
-    lights.add(light2);
-    lights.add(light3);
-    lights.add(spotLight);
-    spotLight->setAttenuationLevel(8);
-    for (int i = 0; i < 5; i++)
+    lights.push_back(light);
+    lights.push_back(light2);
+    lights.push_back(light3);
+    for (int i = 3; i < pointLightCount; i++)
     {
         glm::vec3 pos((rand() % 24) - 12, (rand() % 24) - 12, (rand() % 24) - 12);
         glm::vec3 color((float)(rand() % 256) / 256, (float)(rand() % 256) / 256, (float)(rand() % 256) / 256);
         Light* extraLight = new Light(Light::POINT, pos, color);
-        lights.add(extraLight);
+        lights.push_back(extraLight);
     }
+    lights.push_back(spotLight);
+    spotLight->setAttenuationLevel(8);
 
-    int columns = 4, rows = 2;
+    int columns = 240, rows = 2;
     float* sphere = createSphere(columns, rows, 1.0f);
     VertexBuffer sphereVb(sphere, columns * rows * 6, columns * rows * 6 * 8 * sizeof(float));
     VertexArray sphereVa;
     sphereVa.addBuffer(sphereVb, layout);
     delete[]sphere;
-
-    FrameBuffer depthBuffer;
 
     VertexBuffer skyboxVb(SKYBOX_VERTICES, 36, sizeof(SKYBOX_VERTICES));
     VertexBufferLayout skyboxLayout;
@@ -204,14 +203,19 @@ int main()
     Texture skyboxTexture;
     skyboxTexture.loadCube(skyboxPath);
     Shader skyboxShader("res/shader/skybox.shader");
-    skyboxTexture.bind(0);
-    skyboxShader.setUniform1i("skybox", 0);
+    skyboxTexture.bind();
+    skyboxShader.setUniform1i("skybox", skyboxTexture.slot);
     glm::mat4 skyboxModel = glm::rotate(glm::mat4(1.0f), glm::radians(90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
     skyboxShader.setUniformMat4("model", skyboxModel);
 
-    Texture depthBufferTex;
-    depthBufferTex.bind(1);
-    depthBufferTex.attachDepthBufferCube(depthBuffer);
+    FrameBuffer depthBuffer[pointLightCount];
+    Texture depthBufferTex[pointLightCount];
+    for (int i = 0; i < pointLightCount; i++)
+    {
+        depthBufferTex[i].bind();
+        depthBufferTex[i].attachDepthBufferCube(depthBuffer[i]);
+        depthBufferTex[i].unbind();
+    }
 
     glm::mat4 model(1.0f);
     glm::mat4 view(1.0f);
@@ -233,6 +237,7 @@ int main()
     };
 
     glm::vec3 objectColor = glm::vec3(0.4f, 0.5f, 0.7f);
+    objectColor = glm::vec3(1.0f, 1.0f, 1.0f) * 0.7f;
     Shader shadowShader("res/shader/shadow.shader");
 
     while (!glfwWindowShouldClose(window))
@@ -244,64 +249,67 @@ int main()
         float timeValue = glfwGetTime();
         float additionY = sin(timeValue * 3.0f) * 6.0f;
         proj = glm::perspective(glm::radians(camera.FOV()), (float)W_WIDTH / (float)W_HEIGHT, 0.1f, 100.0f);
-        light->pos.y = additionY;
-
+        light->pos.y = sin(timeValue * 3.0f) * 6.0f;
+        light->pos.x = cos(timeValue * 3.0f) * 6.0f;
+        light->pos.z = sin(timeValue * 0.7f) * 4.0f;
 
         float aspect = (float)Texture::SHADOW_WIDTH / (float)Texture::SHADOW_HEIGHT;
         float shadowNear = 0.1f;
         float shadowFar = 50.0f;
-        glm::mat4 shadowProj = glm::perspective(glm::radians(90.0f), aspect, shadowNear, shadowFar);
-        std::vector<glm::mat4> shadowTransforms;
-        glm::vec3 lightPos = light->pos;
-        shadowTransforms.push_back(shadowProj * glm::lookAt(lightPos, lightPos + glm::vec3(1.0, 0.0, 0.0), glm::vec3(0.0, -1.0, 0.0)));
-        shadowTransforms.push_back(shadowProj * glm::lookAt(lightPos, lightPos + glm::vec3(-1.0, 0.0, 0.0), glm::vec3(0.0, -1.0, 0.0)));
-        shadowTransforms.push_back(shadowProj * glm::lookAt(lightPos, lightPos + glm::vec3(0.0, 1.0, 0.0), glm::vec3(0.0, 0.0, 1.0)));
-        shadowTransforms.push_back(shadowProj * glm::lookAt(lightPos, lightPos + glm::vec3(0.0, -1.0, 0.0), glm::vec3(0.0, 0.0, -1.0)));
-        shadowTransforms.push_back(shadowProj * glm::lookAt(lightPos, lightPos + glm::vec3(0.0, 0.0, 1.0), glm::vec3(0.0, -1.0, 0.0)));
-        shadowTransforms.push_back(shadowProj * glm::lookAt(lightPos, lightPos + glm::vec3(0.0, 0.0, -1.0), glm::vec3(0.0, -1.0, 0.0)));
-
         glViewport(0, 0, Texture::SHADOW_HEIGHT, Texture::SHADOW_WIDTH);
-        depthBuffer.bind();
-        glClear(GL_DEPTH_BUFFER_BIT);
         shadowShader.enable();
-        for (int i = 0; i < 6; i++)
-            shadowShader.setUniformMat4(("shadowMatrices[" + std::to_string(i) + "]").c_str(), shadowTransforms[i]);
-        shadowShader.setUniform1f("farPlane", shadowFar);
-        shadowShader.setUniformVec3("lightPos", lightPos);
-        for (int i = 0; i < 6; i++)
+
+        for (int i = 0; i < pointLightCount; i++)
         {
-            model = glm::mat4(1.0f);
-            model = glm::rotate(glm::mat4(1.0f), glm::radians(-55.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-            float scale = (float)i / 5 + 1;
-            model = glm::translate(model, cubePositions[i]);
-            model = glm::scale(model, glm::vec3(scale, scale, scale));
-            model = glm::rotate(model, glm::radians(timeValue * 30.0f * i + 20.0f * i), glm::vec3(1.0f, 0.3f, 0.5f));
-            shadowShader.setUniformMat4("model", model);
-            renderer.draw(sphereVa, shadowShader);
+            glm::mat4 shadowProj = glm::perspective(glm::radians(90.0f), aspect, shadowNear, shadowFar);
+            std::vector<glm::mat4> shadowTransforms;
+            glm::vec3 lightPos = lights[i]->pos;
+            shadowTransforms.push_back(shadowProj * glm::lookAt(lightPos, lightPos + glm::vec3(1.0, 0.0, 0.0), glm::vec3(0.0, -1.0, 0.0)));
+            shadowTransforms.push_back(shadowProj * glm::lookAt(lightPos, lightPos + glm::vec3(-1.0, 0.0, 0.0), glm::vec3(0.0, -1.0, 0.0)));
+            shadowTransforms.push_back(shadowProj * glm::lookAt(lightPos, lightPos + glm::vec3(0.0, 1.0, 0.0), glm::vec3(0.0, 0.0, 1.0)));
+            shadowTransforms.push_back(shadowProj * glm::lookAt(lightPos, lightPos + glm::vec3(0.0, -1.0, 0.0), glm::vec3(0.0, 0.0, -1.0)));
+            shadowTransforms.push_back(shadowProj * glm::lookAt(lightPos, lightPos + glm::vec3(0.0, 0.0, 1.0), glm::vec3(0.0, -1.0, 0.0)));
+            shadowTransforms.push_back(shadowProj * glm::lookAt(lightPos, lightPos + glm::vec3(0.0, 0.0, -1.0), glm::vec3(0.0, -1.0, 0.0)));
+
+            depthBuffer[i].bind();
+            glClear(GL_DEPTH_BUFFER_BIT);
+            for (int i = 0; i < 6; i++)
+                shadowShader.setUniformMat4(("shadowMatrices[" + std::to_string(i) + "]").c_str(), shadowTransforms[i]);
+            shadowShader.setUniform1f("farPlane", shadowFar);
+            shadowShader.setUniformVec3("lightPos", lightPos);
+            for (int i = 0; i < 10; i++)
+            {
+                model = glm::mat4(1.0f);
+                model = glm::rotate(glm::mat4(1.0f), glm::radians(-55.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+                float scale = (float)i / 5 + 1;
+                model = glm::translate(model, cubePositions[i]);
+                model = glm::scale(model, glm::vec3(scale, scale, scale));
+                model = glm::rotate(model, glm::radians(timeValue * 30.0f * i + 20.0f * i), glm::vec3(1.0f, 0.3f, 0.5f));
+                shadowShader.setUniformMat4("model", model);
+                renderer.draw(va, shadowShader);
+            }
+            depthBuffer[i].unbind();
         }
-        depthBuffer.unbind();
 
         glViewport(0, 0, W_WIDTH, W_HEIGHT);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        /*skyboxShader.enable();
-        skyboxShader.setUniform1i("skybox", 1);
-        skyboxShader.setUniformMat4("proj", proj);
-        skyboxShader.setUniformMat4("view", glm::mat4(glm::mat3(camera.getViewMatrix())));
-        renderer.draw(skyboxVa, skyboxShader);*/
-
-        depthBufferTex.bind(1);
+        //depthBufferTex[5].bind();
         shader.enable();
         shader.setUniformMat4("proj", proj);
         shader.setUniformMat4("view", camera.getViewMatrix());
         shader.setUniformVec3("viewPos", camera.pos());
         shader.setUniform1f("normDir", 1.0);
         shader.setLight(lights);
-        shader.setMaterial(objectColor * 0.05f, objectColor * 0.8f, objectColor, 16.0f);
-        shader.setUniform1i("depthMap", 1);
+        shader.setMaterial(objectColor * 0.05f, objectColor, objectColor, 16.0f);
+        for (int i = 0; i < pointLightCount; i++)
+        {
+            depthBufferTex[i].bind();
+            shader.setUniform1i(("depthMapPoint[" + std::to_string(i) + "]").c_str(), depthBufferTex[i].slot);
+        }
         shader.setUniform1f("farPlane", shadowFar);
 
-        for (int i = 0; i < 6; i++)
+        for (int i = 0; i < 10; i++)
         {
             model = glm::mat4(1.0f);
             model = glm::rotate(glm::mat4(1.0f), glm::radians(-55.0f), glm::vec3(0.0f, 0.0f, 1.0f));
@@ -310,7 +318,7 @@ int main()
             model = glm::scale(model, glm::vec3(scale, scale, scale));
             model = glm::rotate(model, glm::radians(timeValue * 30.0f * i + 20.0f * i), glm::vec3(1.0f, 0.3f, 0.5f));
             shader.useModelMatrix(model);
-            renderer.draw(sphereVa, shader);
+            renderer.draw(va, shader);
         }
 
         model = glm::mat4(1.0f);
@@ -318,7 +326,7 @@ int main()
         glm::vec3 wallColor(1.0f, 1.0f, 1.0f);
         shader.useModelMatrix(model);
         shader.setUniform1f("normDir", -1.0);
-        shader.setMaterial(wallColor * 0.2f, wallColor * 0.8f, wallColor * 0.5f, 32.0f);
+        shader.setMaterial(wallColor * 0.05f, wallColor * 1.0f, wallColor * 0.5f, 16.0f);
         renderer.draw(va, shader);
 
         lightShader.enable();
@@ -326,7 +334,7 @@ int main()
         lightShader.setUniformMat4("view", camera.getViewMatrix());
         spotLight->pos = camera.pos();
         spotLight->dir = camera.pointing();
-        for (int i = 0; i < lights.count(); i++)
+        for (int i = 0; i < lights.size(); i++)
         {
             if (lights[i]->type != Light::POINT) continue;
             model = glm::translate(glm::mat4(1.0f), lights[i]->pos);
@@ -334,6 +342,13 @@ int main()
             lightShader.setUniformVec3("lightColor", glm::length(lights[i]->color) * glm::normalize(lights[i]->color));
             renderer.draw(va, lightShader);
         }
+
+        /*skyboxShader.enable();
+        skyboxTexture.bind();
+        skyboxShader.setUniform1i("skybox", skyboxTexture.slot);
+        skyboxShader.setUniformMat4("proj", proj);
+        skyboxShader.setUniformMat4("view", glm::mat4(glm::mat3(camera.getViewMatrix())));
+        renderer.draw(skyboxVa, skyboxShader);*/
 
         glfwSwapBuffers(window);
         glfwPollEvents();

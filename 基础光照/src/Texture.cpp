@@ -1,6 +1,8 @@
 #include "Texture.h"
 #include "stb_image/stb_image.h"
 
+int Texture::m_SlotsUsed = 0;
+
 Texture::Texture() :
 	m_Width(0), m_Height(0), m_BitsPerPixel(0),
 	m_TextureType(0), m_Loaded(false)
@@ -40,6 +42,7 @@ void Texture::loadSingle(const std::string& filePath)
 
 	if (data != nullptr) stbi_image_free(data);
 	m_Loaded = true;
+	slot = m_SlotsUsed++;
 }
 
 void Texture::loadCube(const std::vector<std::string>& filePaths)
@@ -78,6 +81,7 @@ void Texture::loadCube(const std::vector<std::string>& filePaths)
 	glBindTexture(m_TextureType, 0);
 
 	m_Loaded = true;
+	slot = m_SlotsUsed++;
 }
 
 void Texture::attachDepthBufferCube(const FrameBuffer& depthBuffer)
@@ -115,6 +119,13 @@ void Texture::attachDepthBufferCube(const FrameBuffer& depthBuffer)
 
 	glBindTexture(m_TextureType, 0);
 	m_Loaded = true;
+	slot = m_SlotsUsed++;
+}
+
+void Texture::bind() const
+{
+	glActiveTexture(GL_TEXTURE0 + slot);
+	glBindTexture(m_TextureType, ID);
 }
 
 void Texture::bind(int slot) const
