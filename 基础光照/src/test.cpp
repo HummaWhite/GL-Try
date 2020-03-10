@@ -145,18 +145,17 @@ int main()
     glEnable(GL_DEPTH_TEST);
     glDepthFunc(GL_LEQUAL);
 
-    VertexBuffer vb(CUBE_VERTICES, 36, sizeof(CUBE_VERTICES));
+    float* a = addShapeWithTangents(CUBE_VERTICES, 12);
+    VertexBuffer vb(a, 36, 504 * sizeof(float));
     VertexBufferLayout layout;
     layout.add<float>(3);
     layout.add<float>(2);
     layout.add<float>(3);
+    layout.add<GL_FLOAT>(3);
+    layout.add<GL_FLOAT>(3);
     VertexArray va;
     va.addBuffer(vb, layout);
-    Shader shader("res/shader/basic.shader");
-
-    //Texture texture("res/texture/tex.png");
-    //texture.bind();
-    //shader.setUniform1i("u_Texture", 0);
+    Shader shader("res/shader/normalMap.shader");
 
     VertexArray lightVa;
     lightVa.addBuffer(vb, layout);
@@ -166,6 +165,8 @@ int main()
     Light* light = new Light(Light::POINT, glm::vec3(0, 0, 4.0f), glm::vec3(1.0f, 1.0f, 1.0f));
     Light* light2 = new Light(Light::POINT, glm::vec3(6.0f, -6.0f, 0), glm::vec3(1.0f, 0.0f, 1.0f));
     Light* light3 = new Light(Light::POINT, glm::vec3(-4.0, -2.0f, -1.0f), glm::vec3(0.2f, 0.5f, 0.9f));
+    //light2->color = glm::vec3(1.0f, 1.0f, 1.0f);
+    //light3->color = glm::vec3(1.0f, 1.0f, 1.0f);
     lights.push_back(light);
     lights.push_back(light2);
     lights.push_back(light3);
@@ -174,6 +175,7 @@ int main()
         glm::vec3 pos((rand() % 24) - 12, (rand() % 24) - 12, (rand() % 24) - 12);
         glm::vec3 color((float)(rand() % 256) / 256, (float)(rand() % 256) / 256, (float)(rand() % 256) / 256);
         Light* extraLight = new Light(Light::POINT, pos, color);
+        //extraLight->color = glm::vec3(1.0f, 1.0f, 1.0f);
         lights.push_back(extraLight);
     }
     lights.push_back(spotLight);
@@ -204,7 +206,7 @@ int main()
     skyboxTexture.loadCube(skyboxPath);
     Shader skyboxShader("res/shader/skybox.shader");
     skyboxTexture.bind();
-    skyboxShader.setUniform1i("skybox", skyboxTexture.slot);
+    skyboxShader.setTexture("skybox", skyboxTexture);
     glm::mat4 skyboxModel = glm::rotate(glm::mat4(1.0f), glm::radians(90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
     skyboxShader.setUniformMat4("model", skyboxModel);
 
@@ -216,6 +218,15 @@ int main()
         depthBufferTex[i].attachDepthBufferCube(depthBuffer[i]);
         depthBufferTex[i].unbind();
     }
+
+    Texture normMap;
+    normMap.loadSingle("res/texture/crafting_table_front_n.png");
+    shader.setTexture("normMap", normMap);
+    Texture ordTex;
+    ordTex.loadSingle("res/texture/crafting_table_front.png");
+    shader.setTexture("ordTex", ordTex);
+    ordTex.bind();
+    normMap.bind();
 
     glm::mat4 model(1.0f);
     glm::mat4 view(1.0f);
@@ -256,12 +267,12 @@ int main()
         float aspect = (float)Texture::SHADOW_WIDTH / (float)Texture::SHADOW_HEIGHT;
         float shadowNear = 0.1f;
         float shadowFar = 50.0f;
+        glm::mat4 shadowProj = glm::perspective(glm::radians(90.0f), aspect, shadowNear, shadowFar);
         glViewport(0, 0, Texture::SHADOW_HEIGHT, Texture::SHADOW_WIDTH);
         shadowShader.enable();
 
         for (int i = 0; i < pointLightCount; i++)
         {
-            glm::mat4 shadowProj = glm::perspective(glm::radians(90.0f), aspect, shadowNear, shadowFar);
             std::vector<glm::mat4> shadowTransforms;
             glm::vec3 lightPos = lights[i]->pos;
             shadowTransforms.push_back(shadowProj * glm::lookAt(lightPos, lightPos + glm::vec3(1.0, 0.0, 0.0), glm::vec3(0.0, -1.0, 0.0)));
@@ -294,7 +305,6 @@ int main()
         glViewport(0, 0, W_WIDTH, W_HEIGHT);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        //depthBufferTex[5].bind();
         shader.enable();
         shader.setUniformMat4("proj", proj);
         shader.setUniformMat4("view", camera.getViewMatrix());
@@ -326,7 +336,7 @@ int main()
         glm::vec3 wallColor(1.0f, 1.0f, 1.0f);
         shader.useModelMatrix(model);
         shader.setUniform1f("normDir", -1.0);
-        shader.setMaterial(wallColor * 0.05f, wallColor * 1.0f, wallColor * 0.5f, 16.0f);
+        shader.setMaterial(wallColor * 0.05f, wallColor * 1.0f, wallColor * 0.0f, 32.0f);
         renderer.draw(va, shader);
 
         lightShader.enable();

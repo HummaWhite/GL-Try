@@ -15,7 +15,7 @@ Texture::~Texture()
 	glDeleteTextures(1, &ID);
 }
 
-void Texture::loadSingle(const std::string& filePath)
+void Texture::loadSingle(const std::string& filePath, GLuint type)
 {
 	if (m_Loaded)
 	{
@@ -25,7 +25,7 @@ void Texture::loadSingle(const std::string& filePath)
 	m_TextureType = GL_TEXTURE_2D;
 	glBindTexture(m_TextureType, ID);
 
-	stbi_set_flip_vertically_on_load(1);
+	//stbi_set_flip_vertically_on_load(1);
 	GLubyte* data = stbi_load(filePath.c_str(), &m_Width, &m_Height, &m_BitsPerPixel, 4);
 	if (data == nullptr)
 	{
@@ -34,8 +34,8 @@ void Texture::loadSingle(const std::string& filePath)
 	}
 
 	glTexImage2D(m_TextureType, 0, GL_RGBA, m_Width, m_Height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
-	glTexParameteri(m_TextureType, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glTexParameteri(m_TextureType, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glTexParameteri(m_TextureType, GL_TEXTURE_MIN_FILTER, type);
+	glTexParameteri(m_TextureType, GL_TEXTURE_MAG_FILTER, type);
 	glTexParameteri(m_TextureType, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 	glTexParameteri(m_TextureType, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 	glBindTexture(m_TextureType, 0);
@@ -45,7 +45,7 @@ void Texture::loadSingle(const std::string& filePath)
 	slot = m_SlotsUsed++;
 }
 
-void Texture::loadCube(const std::vector<std::string>& filePaths)
+void Texture::loadCube(const std::vector<std::string>& filePaths, GLuint type)
 {
 	if (m_Loaded)
 	{
@@ -73,8 +73,8 @@ void Texture::loadCube(const std::vector<std::string>& filePaths)
 		stbi_image_free(data);
 	}
 
-	glTexParameteri(m_TextureType, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	glTexParameteri(m_TextureType, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(m_TextureType, GL_TEXTURE_MAG_FILTER, type);
+	glTexParameteri(m_TextureType, GL_TEXTURE_MIN_FILTER, type);
 	glTexParameteri(m_TextureType, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 	glTexParameteri(m_TextureType, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 	glTexParameteri(m_TextureType, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);

@@ -1,8 +1,10 @@
 //$Vertex
 #version 330 core
 layout(location = 0) in vec3 pos;
-layout(location = 1) in vec2 aTexCoord;
-layout(location = 2) in vec3 aNormal;
+layout(location = 1) in vec2 texCoord;
+layout(location = 2) in vec3 normal;
+layout(location = 3) in vec3 tangent;
+layout(location = 4) in vec3 bitangent;
 
 uniform mat4 model;
 uniform mat4 view;
@@ -10,17 +12,25 @@ uniform mat4 proj;
 uniform mat3 modelInv;
 uniform float normDir;
 
-out vec2 texCoord;
-out vec3 fragPos;
-out vec3 normal;
+out VS_OUT
+{
+    vec2 texCoord;
+    vec3 fragPos;
+    vec3 normal;
+    mat3 TBN;
+} vs_out;
 
 void main()
 {
     mat4 transform = proj * view * model;
     gl_Position = transform * vec4(pos, 1.0f);
-    fragPos = vec3(model * vec4(pos, 1.0f));
-    texCoord = aTexCoord;
-    normal = normalize(modelInv * aNormal * normDir);
+    vs_out.fragPos = vec3(model * vec4(pos, 1.0f));
+    vs_out.texCoord = texCoord;
+    vs_out.normal = normalize(modelInv * normal * normDir);
+    vec3 T = normalize(vec3(model * vec4(tangent, 0.0)));
+    vec3 B = normalize(vec3(model * vec4(bitangent, 0.0)));
+    vec3 N = normalize(vec3(model * vec4(normal, 0.0)));
+    vs_out.TBN = mat3(T, B, N) * normDir;
 }
 
 //$Fragment
@@ -67,10 +77,15 @@ struct SpotLight
     float outerCutOff;
 };
 
+in VS_OUT
+{
+    vec2 texCoord;
+    vec3 fragPos;
+    vec3 normal;
+    mat3 TBN;
+} fs_in;
+
 out vec4 fragColor;
-in vec3 fragPos;
-in vec3 normal;
-in vec2 texCoord;
 
 uniform Material material;
 uniform int dirLightsCount;
@@ -159,16 +174,16 @@ float linearDepth(float depth)
 void main()
 {
     vec3 result = vec3(0, 0, 0);
-    vec3 newNorm = normal;
-    vec3 addNorm = texture(normMap, texCoord).rgb;
+    vec3 newNorm = fs_in.normal;
+    vec3 addNorm = texture(normMap, fs_in.texCoord).rgb;
     addNorm = normalize(addNorm * 2.0 - 1.0);
-    newNorm = normal;
+    newNorm = normalize(fs_in.TBN * addNorm);
     for (int i = 0; i < dirLightsCount; i++)
-        result += calcDirLight(i, newNorm, normalize(viewPos - fragPos));
+        result += calcDirLight(i, newNorm, normalize(viewPos - fs_in.fragPos));
     for (int i = 0; i < pointLightsCount; i++)
-        result += calcPointLight(i, newNorm, fragPos, normalize(viewPos - fragPos));
+        result += calcPointLight(i, newNorm, fs_in.fragPos, normalize(viewPos - fs_in.fragPos));
     for (int i = 0; i < spotLightsCount; i++)
-        result += calcSpotLight(i, newNorm, fragPos, normalize(viewPos - fragPos));
-    result *= vec3(texture(ordTex, texCoord));
+        result += calcSpotLight(i, newNorm, fs_in.fragPos, normalize(viewPos - fs_in.fragPos));
+    result *= vec3(texture(ordTex, fs_in.texCoord));
     fragColor = vec4(result, 1.0);
 }

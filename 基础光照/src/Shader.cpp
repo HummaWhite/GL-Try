@@ -116,6 +116,12 @@ void Shader::setUniformMat4(const char* name, const glm::mat4& mat) const
 	glUniformMatrix4fv(getUniformLocation(name), 1, GL_FALSE, &mat[0][0]);
 }
 
+void Shader::setTexture(const char* name, const Texture& tex) const
+{
+	tex.bind();
+	glUniform1i(getUniformLocation(name), tex.slot);
+}
+
 void Shader::setLight(const LightGroup& lightGroup)
 {
 	GLuint dirCount(0), pointCount(0), spotCount(0);
@@ -176,8 +182,8 @@ void Shader::setMaterial(const glm::vec3& ambient, const glm::vec3& diffuse, con
 void Shader::useModelMatrix(const glm::mat4& model)
 {
 	setUniformMat4("model", model);
-	glm::mat3 modelInv = glm::mat3(glm::transpose(glm::inverse(model)));
-	setUniformMat3("modelInv", modelInv);
+	//glm::mat3 modelInv = glm::mat3(glm::transpose(glm::inverse(model)));
+	//setUniformMat3("modelInv", modelInv);
 }
 
 void Shader::compileShader(const char* vertexSource, const char* fragmentSource, const char* geometrySource)

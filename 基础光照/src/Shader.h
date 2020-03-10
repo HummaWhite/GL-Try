@@ -8,6 +8,7 @@
 #include <glm/gtc/type_ptr.hpp>
 
 #include "Lighting.h"
+#include "Texture.h"
 
 class Shader
 {
@@ -27,6 +28,7 @@ public:
 	void setUniformVec4(const char* name, const glm::vec4 vec) const;
 	void setUniformMat3(const char* name, const glm::mat3& mat) const;
 	void setUniformMat4(const char* name, const glm::mat4& mat) const;
+	void setTexture(const char* name, const Texture& tex) const;
 	void setLight(const LightGroup& lightGroup);
 	void setMaterial(const glm::vec3& ambient, const glm::vec3& diffuse,
 		const glm::vec3 specular, float shininess);

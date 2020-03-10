@@ -23,8 +23,8 @@ public:
 	Texture();
 	~Texture();
 
-	void loadSingle(const std::string& filePath);
-	void loadCube(const std::vector<std::string>& filePaths);
+	void loadSingle(const std::string& filePath, GLuint type = GL_LINEAR);
+	void loadCube(const std::vector<std::string>& filePaths, GLuint type = GL_LINEAR);
 	void attachDepthBufferCube(const FrameBuffer& frameBuffer);
 
 	void bind() const;
