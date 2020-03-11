@@ -57,3 +57,7 @@
 法线贴图（从R3D材质包中随手拿了一张来用
 
 ![](https://github.com/HummaWhite/GL-Try/blob/master/%E7%BA%B9%E7%90%86/md-pics/OpenGL-Try%202020_3_10%2023_00_50%20(1).png)
+
+## 3.11
+
+添加了ImGui，调参数方便了许多

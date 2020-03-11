@@ -6,6 +6,9 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
+#include "imgui/imgui.h"
+#include "imgui/imgui_impl_glfw.h"
+#include "imgui/imgui_impl_opengl3.h"
 
 #include "Shader.h"
 #include "VertexBuffer.h"
@@ -147,6 +150,7 @@ int main()
 
     float* a = addShapeWithTangents(CUBE_VERTICES, 12);
     VertexBuffer vb(a, 36, 504 * sizeof(float));
+    delete[]a;
     VertexBufferLayout layout;
     layout.add<float>(3);
     layout.add<float>(2);
@@ -161,12 +165,16 @@ int main()
     lightVa.addBuffer(vb, layout);
     Shader lightShader("res/shader/light.shader");
     LightGroup lights;
-    const int pointLightCount = 8;
+    const int pointLightCount = 3;
     Light* light = new Light(Light::POINT, glm::vec3(0, 0, 4.0f), glm::vec3(1.0f, 1.0f, 1.0f));
     Light* light2 = new Light(Light::POINT, glm::vec3(6.0f, -6.0f, 0), glm::vec3(1.0f, 0.0f, 1.0f));
     Light* light3 = new Light(Light::POINT, glm::vec3(-4.0, -2.0f, -1.0f), glm::vec3(0.2f, 0.5f, 0.9f));
+    int light0AttenLevel = 8;
     //light2->color = glm::vec3(1.0f, 1.0f, 1.0f);
     //light3->color = glm::vec3(1.0f, 1.0f, 1.0f);
+    light->setAttenuationLevel(8);
+    light2->setAttenuationLevel(8);
+    light3->setAttenuationLevel(8);
     lights.push_back(light);
     lights.push_back(light2);
     lights.push_back(light3);
@@ -176,17 +184,20 @@ int main()
         glm::vec3 color((float)(rand() % 256) / 256, (float)(rand() % 256) / 256, (float)(rand() % 256) / 256);
         Light* extraLight = new Light(Light::POINT, pos, color);
         //extraLight->color = glm::vec3(1.0f, 1.0f, 1.0f);
+        //extraLight->setAttenuationLevel(8);
         lights.push_back(extraLight);
     }
     lights.push_back(spotLight);
     spotLight->setAttenuationLevel(8);
 
-    int columns = 240, rows = 2;
+    int columns = 120, rows = 2;
     float* sphere = createSphere(columns, rows, 1.0f);
-    VertexBuffer sphereVb(sphere, columns * rows * 6, columns * rows * 6 * 8 * sizeof(float));
+    float* extendedSphere = addShapeWithTangents(sphere, columns * rows * 2);
+    VertexBuffer sphereVb(extendedSphere, columns * rows * 6, columns * rows * 6 * 14 * sizeof(float));
     VertexArray sphereVa;
     sphereVa.addBuffer(sphereVb, layout);
     delete[]sphere;
+    delete[]extendedSphere;
 
     VertexBuffer skyboxVb(SKYBOX_VERTICES, 36, sizeof(SKYBOX_VERTICES));
     VertexBufferLayout skyboxLayout;
@@ -221,9 +232,11 @@ int main()
 
     Texture normMap;
     normMap.loadSingle("res/texture/crafting_table_front_n.png");
+    //normMap.loadSingle("res/texture/diamond_block_n.png");
     shader.setTexture("normMap", normMap);
     Texture ordTex;
     ordTex.loadSingle("res/texture/crafting_table_front.png");
+    //ordTex.loadSingle("res/texture/diamond_block.png");
     shader.setTexture("ordTex", ordTex);
     ordTex.bind();
     normMap.bind();
@@ -251,6 +264,13 @@ int main()
     objectColor = glm::vec3(1.0f, 1.0f, 1.0f) * 0.7f;
     Shader shadowShader("res/shader/shadow.shader");
 
+    IMGUI_CHECKVERSION();
+    ImGui::CreateContext();
+    ImGuiIO& io = ImGui::GetIO(); (void)io;
+    ImGui::StyleColorsDark();
+    ImGui_ImplGlfw_InitForOpenGL(window, true);
+    ImGui_ImplOpenGL3_Init("#version 330");
+
     while (!glfwWindowShouldClose(window))
     {
         fpsTimer.work();
@@ -260,9 +280,9 @@ int main()
         float timeValue = glfwGetTime();
         float additionY = sin(timeValue * 3.0f) * 6.0f;
         proj = glm::perspective(glm::radians(camera.FOV()), (float)W_WIDTH / (float)W_HEIGHT, 0.1f, 100.0f);
-        light->pos.y = sin(timeValue * 3.0f) * 6.0f;
-        light->pos.x = cos(timeValue * 3.0f) * 6.0f;
-        light->pos.z = sin(timeValue * 0.7f) * 4.0f;
+        //light->pos.y = sin(timeValue * 3.0f) * 6.0f;
+        //light->pos.x = cos(timeValue * 3.0f) * 6.0f;
+        //light->pos.z = sin(timeValue * 0.7f) * 4.0f;
 
         float aspect = (float)Texture::SHADOW_WIDTH / (float)Texture::SHADOW_HEIGHT;
         float shadowNear = 0.1f;
@@ -353,12 +373,37 @@ int main()
             renderer.draw(va, lightShader);
         }
 
-        /*skyboxShader.enable();
+        skyboxShader.enable();
         skyboxTexture.bind();
         skyboxShader.setUniform1i("skybox", skyboxTexture.slot);
         skyboxShader.setUniformMat4("proj", proj);
         skyboxShader.setUniformMat4("view", glm::mat4(glm::mat3(camera.getViewMatrix())));
-        renderer.draw(skyboxVa, skyboxShader);*/
+        renderer.draw(skyboxVa, skyboxShader);
+
+        ImGui_ImplOpenGL3_NewFrame();
+        ImGui_ImplGlfw_NewFrame();
+        ImGui::NewFrame();
+        {
+            ImGui::Begin("TEST");
+            {
+                ImGui::Text("Light0");
+                ImGui::ColorEdit3("Color0", (float*)&light->color);
+                ImGui::SliderFloat3("Pos0", (float*)&light->pos, -20.0f, 20.0f);
+                ImGui::SliderInt("Attenuation", &light0AttenLevel, 0, 11);
+                light->setAttenuationLevel(light0AttenLevel);
+                ImGui::Text("Light1");
+                ImGui::ColorEdit3("Color1", (float*)&light2->color);
+                ImGui::SliderFloat3("Pos1", (float*)&light2->pos, -20.0f, 20.0f);
+                ImGui::Text("Light2");
+                ImGui::ColorEdit3("Color2", (float*)&light3->color);
+                ImGui::SliderFloat3("Pos2", (float*)&light3->pos, -20.0f, 20.0f);
+            }
+            ImGui::End();
+        }
+        ImGui::EndFrame();
+
+        ImGui::Render();
+        ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 
         glfwSwapBuffers(window);
         glfwPollEvents();
