@@ -12,6 +12,8 @@ uniform mat4 proj;
 uniform mat3 modelInv;
 uniform float normDir;
 
+out vec3 fragScrPos;
+
 out VS_OUT
 {
     vec2 texCoord;
@@ -31,6 +33,7 @@ void main()
     vec3 B = normalize(vec3(model * vec4(bitangent, 0.0)));
     vec3 N = normalize(vec3(model * vec4(normal, 0.0)));
     vs_out.TBN = mat3(T, B, N) * normDir;
+    fragScrPos = gl_Position.xyz;
 }
 
 //$Fragment
@@ -48,9 +51,8 @@ struct Material
     vec3 diffuse;
     vec3 specular;
     float shininess;
-    sampler2D diffuseTex;
-    sampler2D specularTex;
     sampler2D normalMap;
+    sampler2D parallaxMap;
 };
 
 struct DirLight
@@ -85,6 +87,7 @@ in VS_OUT
     mat3 TBN;
 } fs_in;
 
+in vec3 fragScrPos;
 out vec4 fragColor;
 
 uniform Material material;
@@ -100,6 +103,10 @@ uniform samplerCube depthMapPoint[MAX_LIGHTS_POINT];
 uniform float farPlane;
 uniform sampler2D ordTex;
 uniform sampler2D normMap;
+uniform sampler2D paraMap;
+uniform float paraStrength;
+uniform bool useTexture;
+uniform bool useNormalMap;
 
 float calcPointLightShadow(int index, vec3 fragPos, vec3 lightPos)
 {
@@ -174,16 +181,17 @@ float linearDepth(float depth)
 void main()
 {
     vec3 result = vec3(0, 0, 0);
-    vec3 newNorm = fs_in.normal;
     vec3 addNorm = texture(normMap, fs_in.texCoord).rgb;
     addNorm = normalize(addNorm * 2.0 - 1.0);
-    newNorm = normalize(fs_in.TBN * addNorm);
+    vec3 newNorm = useNormalMap ? normalize(fs_in.TBN * addNorm) : fs_in.normal;
+    vec3 fragPos = fs_in.fragPos;
+    vec3 fragToView = normalize(viewPos - fragPos);
     for (int i = 0; i < dirLightsCount; i++)
-        result += calcDirLight(i, newNorm, normalize(viewPos - fs_in.fragPos));
+        result += calcDirLight(i, newNorm, fragToView);
     for (int i = 0; i < pointLightsCount; i++)
-        result += calcPointLight(i, newNorm, fs_in.fragPos, normalize(viewPos - fs_in.fragPos));
+        result += calcPointLight(i, newNorm, fragPos, fragToView);
     for (int i = 0; i < spotLightsCount; i++)
-        result += calcSpotLight(i, newNorm, fs_in.fragPos, normalize(viewPos - fs_in.fragPos));
-    result *= vec3(texture(ordTex, fs_in.texCoord));
+        result += calcSpotLight(i, newNorm, fragPos, fragToView);
+    result *= useTexture ? texture(ordTex, fs_in.texCoord).rgb : vec3(1.0f);
     fragColor = vec4(result, 1.0);
 }

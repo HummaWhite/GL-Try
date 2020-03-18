@@ -31,6 +31,7 @@ static Camera camera(glm::vec3(0, 0, -3));
 static FPSTimer fpsTimer;
 Light* spotLight = new Light(Light::SPOT, glm::vec3(0, 0, 0), VEC_UP, glm::vec3(1.0f, 1.0f, 1.0f), 10.0f, 12.5f, 6);
 bool cursorDisabled = 1, F1Pressed = 0;
+static int VERTICAL_SYNC = 1;
 
 void initGLFWdata();
 void framebufferSizeCallback(GLFWwindow* window, int width, int height);
@@ -141,28 +142,26 @@ int main()
     glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
     glfwSetCursorPosCallback(window, mouseCallback);
     glfwSetScrollCallback(window, scrollCallback);
-    VerticalSyncStatus(true);
+    VerticalSyncStatus(VERTICAL_SYNC);
 
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     glEnable(GL_DEPTH_TEST);
     glDepthFunc(GL_LEQUAL);
 
-    float* a = addShapeWithTangents(CUBE_VERTICES, 12);
-    VertexBuffer vb(a, 36, 504 * sizeof(float));
-    delete[]a;
-    VertexBufferLayout layout;
-    layout.add<float>(3);
-    layout.add<float>(2);
-    layout.add<float>(3);
-    layout.add<GL_FLOAT>(3);
-    layout.add<GL_FLOAT>(3);
+    Shape cube;
+    cube.loadCube(1.0f);
+    //cube.loadSphere(60, 30, 1.0f);
+    //cube.loadCone(240, 1.0f, 2.0f);
+    //cube.loadTorus(240, 120, 0.3f, 0.1f);
+    cube.addTangents();
+    VertexBuffer vb(cube);
     VertexArray va;
-    va.addBuffer(vb, layout);
+    va.addBuffer(vb, cube.layout());
     Shader shader("res/shader/normalMap.shader");
 
     VertexArray lightVa;
-    lightVa.addBuffer(vb, layout);
+    lightVa.addBuffer(vb, cube.layout());
     Shader lightShader("res/shader/light.shader");
     LightGroup lights;
     const int pointLightCount = 3;
@@ -190,14 +189,13 @@ int main()
     lights.push_back(spotLight);
     spotLight->setAttenuationLevel(8);
 
-    int columns = 120, rows = 2;
-    float* sphere = createSphere(columns, rows, 1.0f);
-    float* extendedSphere = addShapeWithTangents(sphere, columns * rows * 2);
-    VertexBuffer sphereVb(extendedSphere, columns * rows * 6, columns * rows * 6 * 14 * sizeof(float));
+    int columns = 4, rows = 2;
+    Shape sphere;
+    sphere.loadSphere(columns, rows, 1.0f);
+    sphere.addTangents();
+    VertexBuffer sphereVb(sphere);
     VertexArray sphereVa;
-    sphereVa.addBuffer(sphereVb, layout);
-    delete[]sphere;
-    delete[]extendedSphere;
+    sphereVa.addBuffer(sphereVb, sphere.layout());
 
     VertexBuffer skyboxVb(SKYBOX_VERTICES, 36, sizeof(SKYBOX_VERTICES));
     VertexBufferLayout skyboxLayout;
@@ -230,15 +228,20 @@ int main()
         depthBufferTex[i].unbind();
     }
 
+    Texture paraMap;
+    paraMap.loadSingle("res/texture/diamond_ore_s.png");
+    shader.setTexture("paraMap", paraMap);
+    shader.setUniform1f("paraStrength", 0.9f);
     Texture normMap;
     normMap.loadSingle("res/texture/crafting_table_front_n.png");
-    //normMap.loadSingle("res/texture/diamond_block_n.png");
+    //normMap.loadSingle("res/texture/diamond_ore_n.png");
     shader.setTexture("normMap", normMap);
     Texture ordTex;
     ordTex.loadSingle("res/texture/crafting_table_front.png");
-    //ordTex.loadSingle("res/texture/diamond_block.png");
+    //ordTex.loadSingle("res/texture/diamond_ore.png");
     shader.setTexture("ordTex", ordTex);
     ordTex.bind();
+    paraMap.bind();
     normMap.bind();
 
     glm::mat4 model(1.0f);
@@ -261,8 +264,15 @@ int main()
     };
 
     glm::vec3 objectColor = glm::vec3(0.4f, 0.5f, 0.7f);
-    objectColor = glm::vec3(1.0f, 1.0f, 1.0f) * 0.7f;
+    objectColor = glm::vec3(1.0f, 1.0f, 1.0f) * 1.0f;
+    glm::vec3 matAmbient(objectColor * 0.035f);
+    glm::vec3 matDiffuse(objectColor * 0.7f);
+    glm::vec3 matSpecular(objectColor * 0.7f);
+    float matShininess = 16.0f;
     Shader shadowShader("res/shader/shadow.shader");
+
+    int useTexture = 1;
+    int useNormalMap = 1;
 
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
@@ -273,13 +283,14 @@ int main()
 
     while (!glfwWindowShouldClose(window))
     {
-        fpsTimer.work();
+        //fpsTimer.work();
         processInput(window);
         renderer.clear(0.0f, 0.0f, 0.0f);
         
         float timeValue = glfwGetTime();
         float additionY = sin(timeValue * 3.0f) * 6.0f;
         proj = glm::perspective(glm::radians(camera.FOV()), (float)W_WIDTH / (float)W_HEIGHT, 0.1f, 100.0f);
+        light->setAttenuationLevel(light0AttenLevel);
         //light->pos.y = sin(timeValue * 3.0f) * 6.0f;
         //light->pos.x = cos(timeValue * 3.0f) * 6.0f;
         //light->pos.z = sin(timeValue * 0.7f) * 4.0f;
@@ -331,7 +342,9 @@ int main()
         shader.setUniformVec3("viewPos", camera.pos());
         shader.setUniform1f("normDir", 1.0);
         shader.setLight(lights);
-        shader.setMaterial(objectColor * 0.05f, objectColor, objectColor, 16.0f);
+        shader.setMaterial(matAmbient, matDiffuse, matSpecular, matShininess);
+        shader.setUniform1i("useTexture", useTexture);
+        shader.setUniform1i("useNormalMap", useNormalMap);
         for (int i = 0; i < pointLightCount; i++)
         {
             depthBufferTex[i].bind();
@@ -356,7 +369,7 @@ int main()
         glm::vec3 wallColor(1.0f, 1.0f, 1.0f);
         shader.useModelMatrix(model);
         shader.setUniform1f("normDir", -1.0);
-        shader.setMaterial(wallColor * 0.05f, wallColor * 1.0f, wallColor * 0.0f, 32.0f);
+        shader.setMaterial(wallColor * 0.05f, wallColor * 1.0f, wallColor * 0.7f, 32.0f);
         renderer.draw(va, shader);
 
         lightShader.enable();
@@ -390,13 +403,26 @@ int main()
                 ImGui::ColorEdit3("Color0", (float*)&light->color);
                 ImGui::SliderFloat3("Pos0", (float*)&light->pos, -20.0f, 20.0f);
                 ImGui::SliderInt("Attenuation", &light0AttenLevel, 0, 11);
-                light->setAttenuationLevel(light0AttenLevel);
                 ImGui::Text("Light1");
                 ImGui::ColorEdit3("Color1", (float*)&light2->color);
                 ImGui::SliderFloat3("Pos1", (float*)&light2->pos, -20.0f, 20.0f);
                 ImGui::Text("Light2");
                 ImGui::ColorEdit3("Color2", (float*)&light3->color);
                 ImGui::SliderFloat3("Pos2", (float*)&light3->pos, -20.0f, 20.0f);
+                ImGui::SliderInt("Vertical Sync", &VERTICAL_SYNC, 0, 1);
+                ImGui::ColorEdit3("Ambient", (float*)&matAmbient);
+                ImGui::ColorEdit3("Diffuse", (float*)&matDiffuse);
+                ImGui::ColorEdit3("Specular", (float*)&matSpecular);
+                ImGui::SliderFloat("Shininess", &matShininess, 2.0f, 48.0f);
+                ImGui::SliderInt("Texture on", &useTexture, 0, 1);
+                ImGui::SliderInt("NormalMap on", &useNormalMap, 0, 1);
+                ImGui::Text("x: %.3f y: %.3f z: %.3f  FOV: %.1f", camera.pos().x, camera.pos().y, camera.pos().z, camera.FOV());
+                ImGui::Text("Render Time: %.3f ms, FPS: %.3f", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
+                ImGui::Text("\n");
+                ImGui::Text("WASD / Lshift / Space  - move");
+                ImGui::Text("Mouse                  - view");
+                ImGui::Text("F1                     - release mouse");
+                ImGui::Text("ESC                    - exit");
             }
             ImGui::End();
         }
@@ -405,9 +431,15 @@ int main()
         ImGui::Render();
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 
+        VerticalSyncStatus(VERTICAL_SYNC);
+
         glfwSwapBuffers(window);
         glfwPollEvents();
     }
+
+    ImGui_ImplOpenGL3_Shutdown();
+    ImGui_ImplGlfw_Shutdown();
+    ImGui::DestroyContext();
 
     glfwTerminate();
     return 0;

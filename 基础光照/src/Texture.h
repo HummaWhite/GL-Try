@@ -17,6 +17,17 @@ struct Material
 	float shininess;
 };
 
+typedef enum FrameBufferAttachmentType
+{
+	DEPTH = GL_DEPTH_COMPONENT,
+	STENCIL = GL_STENCIL_ATTACHMENT,
+	COLOR_0 = GL_COLOR_ATTACHMENT0,
+	COLOR_1,
+	COLOR_2,
+	COLOR_3,
+	COLOR_4
+} AttachmentType;
+
 class Texture
 {
 public:
@@ -26,6 +37,7 @@ public:
 	void loadSingle(const std::string& filePath, GLuint type = GL_LINEAR);
 	void loadCube(const std::vector<std::string>& filePaths, GLuint type = GL_LINEAR);
 	void attachDepthBufferCube(const FrameBuffer& frameBuffer);
+	void attachFrameBuffer2D(const FrameBuffer& frameBuffer, AttachmentType type, int width, int height);
 
 	void bind() const;
 	void bind(int slot) const;

@@ -1,11 +1,38 @@
 #pragma once
 #pragma GCC optimize(3, "Ofast", "inline")
 
+#include "VertexBufferLayout.h"
+
 #include <iostream>
 
-float* createCone(int faces, float radius, float height);
-float* createSphere(int columns, int rows, float radius, float Atheta = 360.0f, float Arho = 180.0f);
-float* addShapeWithTangents(const float* ordShape, int trianglesCount);
+class Shape
+{
+public:
+	Shape();
+	float* data() const { return m_Buffer; }
+	int type() const { return m_Type; }
+	int vertexCount() const { return m_VertexCount; }
+	VertexBufferLayout layout() const { return m_Layout; }
+	int size() const { return m_VertexCount * m_Layout.stride(); }
+	void addTangents();
+	void loadCube(float size);
+	void loadCone(int faces, float radius, float height);
+	void loadSphere(int columns, int rows, float radius, float Atheta = 360.0f, float Arho = 180.0f);
+	void loadTorus(int columns, int rows, float majorRadius, float minorRadius, float Atheta = 360.0f, float Btheta = 360.0f);
+	enum
+	{
+		CUBE = 1,
+		CONE,
+		SPHERE,
+		TORUS
+	};
+private:
+	float* m_Buffer;
+	int m_Type;
+	bool m_WithTangents;
+	int m_VertexCount;
+	VertexBufferLayout m_Layout;
+};
 
 const float CUBE_VERTICES[] =
 {

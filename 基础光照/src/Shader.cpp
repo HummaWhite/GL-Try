@@ -182,8 +182,8 @@ void Shader::setMaterial(const glm::vec3& ambient, const glm::vec3& diffuse, con
 void Shader::useModelMatrix(const glm::mat4& model)
 {
 	setUniformMat4("model", model);
-	//glm::mat3 modelInv = glm::mat3(glm::transpose(glm::inverse(model)));
-	//setUniformMat3("modelInv", modelInv);
+	glm::mat3 modelInv = glm::mat3(glm::transpose(glm::inverse(model)));
+	setUniformMat3("modelInv", modelInv);
 }
 
 void Shader::compileShader(const char* vertexSource, const char* fragmentSource, const char* geometrySource)

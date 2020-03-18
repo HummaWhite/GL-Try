@@ -9,6 +9,20 @@ VertexBuffer::VertexBuffer(const void* data, GLuint count, int size, GLenum type
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
 
+VertexBuffer::VertexBuffer(const Shape& shape) :
+	m_VerticesCount(shape.vertexCount())
+{
+	if (shape.data() == nullptr)
+	{
+		std::cout << "Shape data not initilized" << std::endl;
+		return;
+	}
+	glGenBuffers(1, &ID);
+	glBindBuffer(GL_ARRAY_BUFFER, ID);
+	glBufferData(GL_ARRAY_BUFFER, shape.size(), shape.data(), GL_STATIC_DRAW);
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+}
+
 VertexBuffer::~VertexBuffer()
 {
 	glDeleteBuffers(1, &ID);

@@ -122,6 +122,33 @@ void Texture::attachDepthBufferCube(const FrameBuffer& depthBuffer)
 	slot = m_SlotsUsed++;
 }
 
+void Texture::attachFrameBuffer2D(const FrameBuffer& frameBuffer, AttachmentType type, int width, int height)
+{
+	if (m_Loaded)
+	{
+		std::cout << "Error: texture already loaded for this object" << std::endl;
+		return;
+	}
+	m_TextureType = GL_TEXTURE_2D;
+	glBindTexture(m_TextureType, ID);
+
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB16F, width, height, 0, GL_RGB, GL_FLOAT, nullptr);
+
+	glTexParameteri(m_TextureType, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glTexParameteri(m_TextureType, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+
+	frameBuffer.bind();
+	glFramebufferTexture2D(GL_FRAMEBUFFER, type, GL_TEXTURE_2D, ID, 0);
+	frameBuffer.unbind();
+
+	if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
+		std::cout << "Error: framebuffer not complete" << std::endl;
+
+	glBindTexture(m_TextureType, 0);
+	m_Loaded = true;
+	slot = m_SlotsUsed++;
+}
+
 void Texture::bind() const
 {
 	glActiveTexture(GL_TEXTURE0 + slot);
