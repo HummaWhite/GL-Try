@@ -61,3 +61,5 @@
 ## 3.11
 
 添加了ImGui，调参数方便了许多
+
+![](https://github.com/HummaWhite/GL-Try/blob/master/%E7%BA%B9%E7%90%86/md-pics/OpenGL-Try%202020_3_18%2019_44_36.png)
