@@ -1,6 +1,10 @@
 #include "Shape.h"
 
 #include <queue>
+#include <fstream>
+#include <sstream>
+#include <cstring>
+#include <string>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
@@ -74,7 +78,7 @@ void Shape::addTangents()
 	m_Layout.add<GL_FLOAT>(3);
 }
 
-void Shape::loadCube(float size)
+void Shape::loadCube()
 {
 	if (m_Type)
 	{
@@ -148,6 +152,10 @@ void Shape::loadSphere(int columns, int rows, float radius, float Atheta, float 
 			glm::vec3 va(x3 - x2, y3 - y2, z2 - z1);
 			glm::vec3 vb(x4 - x1, y4 - y1, z2 - z1);
 			glm::vec3 norm = glm::normalize(glm::cross(va, vb));
+			//glm::vec3 norm1 = glm::normalize(glm::vec3(x1, y1, z1));
+			//glm::vec3 norm2 = glm::normalize(glm::vec3(x2, y2, z1));
+			//glm::vec3 norm3 = glm::normalize(glm::vec3(x3, y3, z2));
+			//glm::vec3 norm4 = glm::normalize(glm::vec3(x4, y4, z2));
 			float sqx1 = 1.0f / columns * i;
 			float sqx2 = 1.0f / columns * (i + 1);
 			float sqy1 = 1.0f / rows * j;
@@ -215,4 +223,52 @@ void Shape::loadTorus(int columns, int rows, float majorRadius, float minorRadiu
 		Q.pop();
 	}
 	m_Type = TORUS;
+}
+
+void Shape::loadTeapot(float size)
+{
+	if (m_Type)
+	{
+		std::cout << "Already loaded" << std::endl;
+		return;
+	}
+	m_VertexCount = 6320 * 3;
+	FILE* fp = fopen("res/model/teapot.txt", "r+");
+	if (fp == nullptr)
+	{
+		std::cout << "Model missing" << std::endl;
+		return;
+	}
+	char tmp[2];
+	const int mergedVertexCount = 3644;
+	glm::vec3 vertices[mergedVertexCount];
+	for (int i = 0; i < mergedVertexCount; i++)
+	{
+		fscanf(fp, "%s", tmp);
+		fscanf(fp, "%f%f%f", &vertices[i].x, &vertices[i].y, &vertices[i].z);
+		vertices[i] *= size;
+	}
+	std::queue<float> Q;
+	for (int i = 0; i < 6320; i++)
+	{
+		fscanf(fp, "%s", tmp);
+		int indA, indB, indC;
+		fscanf(fp, "%d%d%d", &indA, &indB, &indC);
+		glm::vec3 A = vertices[indA - 1];
+		glm::vec3 B = vertices[indB - 1];
+		glm::vec3 C = vertices[indC - 1];
+		glm::vec3 va = A - C;
+		glm::vec3 vb = B - C;
+		glm::vec3 norm = glm::normalize(glm::cross(va, vb));
+		Q.push(A.x), Q.push(A.y), Q.push(A.z), Q.push(0), Q.push(0), Q.push(norm.x), Q.push(norm.y), Q.push(norm.z);
+		Q.push(B.x), Q.push(B.y), Q.push(B.z), Q.push(0), Q.push(0), Q.push(norm.x), Q.push(norm.y), Q.push(norm.z);
+		Q.push(C.x), Q.push(C.y), Q.push(C.z), Q.push(0), Q.push(0), Q.push(norm.x), Q.push(norm.y), Q.push(norm.z);
+	}
+	m_Buffer = new float[m_VertexCount * 8];
+	for (int i = 0; i < m_VertexCount * 8; i++)
+	{
+		m_Buffer[i] = Q.front();
+		Q.pop();
+	}
+	m_Type = TEAPOT;
 }

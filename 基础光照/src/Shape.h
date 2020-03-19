@@ -15,16 +15,18 @@ public:
 	VertexBufferLayout layout() const { return m_Layout; }
 	int size() const { return m_VertexCount * m_Layout.stride(); }
 	void addTangents();
-	void loadCube(float size);
+	void loadCube();
 	void loadCone(int faces, float radius, float height);
 	void loadSphere(int columns, int rows, float radius, float Atheta = 360.0f, float Arho = 180.0f);
 	void loadTorus(int columns, int rows, float majorRadius, float minorRadius, float Atheta = 360.0f, float Btheta = 360.0f);
+	void loadTeapot(float size);
 	enum
 	{
 		CUBE = 1,
 		CONE,
 		SPHERE,
-		TORUS
+		TORUS,
+		TEAPOT
 	};
 private:
 	float* m_Buffer;

@@ -150,10 +150,11 @@ int main()
     glDepthFunc(GL_LEQUAL);
 
     Shape cube;
-    cube.loadCube(1.0f);
-    //cube.loadSphere(60, 30, 1.0f);
+    //cube.loadCube();
+    cube.loadSphere(12, 6, 1.0f);
     //cube.loadCone(240, 1.0f, 2.0f);
     //cube.loadTorus(240, 120, 0.3f, 0.1f);
+    //cube.loadTeapot(0.2);
     cube.addTangents();
     VertexBuffer vb(cube);
     VertexArray va;
@@ -328,6 +329,7 @@ int main()
                 model = glm::scale(model, glm::vec3(scale, scale, scale));
                 model = glm::rotate(model, glm::radians(timeValue * 30.0f * i + 20.0f * i), glm::vec3(1.0f, 0.3f, 0.5f));
                 shadowShader.setUniformMat4("model", model);
+                shader.setUniformVec3("centerPos", cubePositions[i]);
                 renderer.draw(va, shadowShader);
             }
             depthBuffer[i].unbind();

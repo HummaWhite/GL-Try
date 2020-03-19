@@ -107,6 +107,7 @@ uniform sampler2D paraMap;
 uniform float paraStrength;
 uniform bool useTexture;
 uniform bool useNormalMap;
+uniform vec3 centerPos;
 
 float calcPointLightShadow(int index, vec3 fragPos, vec3 lightPos)
 {
