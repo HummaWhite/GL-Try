@@ -63,3 +63,11 @@
 添加了ImGui，调参数方便了许多
 
 ![](https://github.com/HummaWhite/GL-Try/blob/master/%E7%BA%B9%E7%90%86/md-pics/OpenGL-Try%202020_3_18%2019_44_36.png)
+
+
+
+## 3.29
+
+阴影增加基于PCF的边缘软化，同时尝试了Gamma校正
+
+![](https://github.com/HummaWhite/GL-Try/blob/master/%E7%BA%B9%E7%90%86/md-pics/OpenGL-Try%202020_3_29%2019_48_19.png)
