@@ -16,17 +16,18 @@ public:
 	int size() const { return m_VertexCount * m_Layout.stride(); }
 	void addTangents();
 	void loadCube();
+	void loadSquare();
 	void loadCone(int faces, float radius, float height);
 	void loadSphere(int columns, int rows, float radius, float Atheta = 360.0f, float Arho = 180.0f);
 	void loadTorus(int columns, int rows, float majorRadius, float minorRadius, float Atheta = 360.0f, float Btheta = 360.0f);
-	void loadTeapot(float size);
 	enum
 	{
 		CUBE = 1,
+		SQUARE,
 		CONE,
 		SPHERE,
 		TORUS,
-		TEAPOT
+		SPECIAL
 	};
 private:
 	float* m_Buffer;
@@ -134,4 +135,14 @@ const unsigned int CUBE_INDICES[] =
 	2, 1, 5, 1, 5, 6,
 	0, 1, 5, 1, 5, 4,
 	3, 2, 6, 2, 6, 7
+};
+
+const float SQUARE_VERTICES[] =
+{
+	 1.0f, 1.0f, 0.0f, 1.0f, 1.0f, 0.0f, 0.0f, 1.0f,
+	-1.0f, 1.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f,
+	1.0f, -1.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f,
+	1.0f, -1.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f,
+	-1.0f, 1.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f,
+	-1.0f, -1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f
 };

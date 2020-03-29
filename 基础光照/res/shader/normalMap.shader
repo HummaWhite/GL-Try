@@ -45,6 +45,15 @@ const float AMBIENT_STRENGTH = 0.1f;
 const float NEAR = 0.1;
 const float FAR = 100.0;
 
+const vec3 sampleOffsetDirections[20] = vec3[]
+(
+    vec3(1, 1, 1), vec3(1, -1, 1), vec3(-1, -1, 1), vec3(-1, 1, 1),
+    vec3(1, 1, -1), vec3(1, -1, -1), vec3(-1, -1, -1), vec3(-1, 1, -1),
+    vec3(1, 1, 0), vec3(1, -1, 0), vec3(-1, -1, 0), vec3(-1, 1, 0),
+    vec3(1, 0, 1), vec3(-1, 0, 1), vec3(1, 0, -1), vec3(-1, 0, -1),
+    vec3(0, 1, 1), vec3(0, -1, 1), vec3(0, -1, -1), vec3(0, 1, -1)
+);
+
 struct Material
 {
     vec3 ambient;
@@ -103,21 +112,28 @@ uniform samplerCube depthMapPoint[MAX_LIGHTS_POINT];
 uniform float farPlane;
 uniform sampler2D ordTex;
 uniform sampler2D normMap;
-uniform sampler2D paraMap;
-uniform float paraStrength;
 uniform bool useTexture;
 uniform bool useNormalMap;
+uniform bool gammaCorrection;
+uniform float gamma;
 uniform vec3 centerPos;
 
 float calcPointLightShadow(int index, vec3 fragPos, vec3 lightPos)
 {
+    float shadow = 0.0;
+    int samples = 20;
+    float bias = 0.12;
     vec3 fragToLight = fragPos - lightPos;
-    float closestDepth = texture(depthMapPoint[index], fragToLight).r;
-    closestDepth *= farPlane;
     float currentDepth = length(fragToLight);
-    float bias = 0.052;
-    float shadow = currentDepth - bias > closestDepth ? 1.0 : 0.0;
-    return shadow;
+    float viewDis = length(viewPos - fragPos);
+    float diskRad = (1.0 + (viewDis / farPlane)) / 25.0;
+    for (int i = 0; i < samples; i++)
+    {
+        float closestDepth = texture(depthMapPoint[index], fragToLight + sampleOffsetDirections[i] * diskRad).r;
+        closestDepth *= farPlane;
+        if (currentDepth - bias > closestDepth) shadow += 1.0;
+    }
+    return shadow / float(samples);
 }
 
 vec3 calcDirLight(int index, vec3 norm, vec3 viewDir)
@@ -140,9 +156,10 @@ vec3 calcPointLight(int index, vec3 norm, vec3 fragPos, vec3 viewDir)
     float diff = max(dot(norm, lightDir), 0.0f);
     vec3 reflectDir = reflect(-lightDir, norm);
     float dist = length(light.pos - fragPos);
+    float gammaC = 1.0 - float(gammaCorrection);
     float attenuation = 1.0 / (
-        light.attenuation.x +
-        light.attenuation.y * dist +
+        light.attenuation.x * gammaC +
+        light.attenuation.y * dist * gammaC +
         light.attenuation.z * dist * dist);
     float spec = pow(max(dot(viewDir, reflectDir), 0.0), material.shininess);
     vec3 ambient = light.color * material.ambient;
@@ -159,9 +176,10 @@ vec3 calcSpotLight(int index, vec3 norm, vec3 fragPos, vec3 viewDir)
     float diff = max(dot(norm, lightDir), 0.0f);
     vec3 reflectDir = reflect(-lightDir, norm);
     float dist = length(light.pos - fragPos);
+    float gammaC = 1.0 - float(gammaCorrection);
     float attenuation = 1.0 / (
-        light.attenuation.x +
-        light.attenuation.y * dist +
+        light.attenuation.x * gammaC +
+        light.attenuation.y * dist * gammaC +
         light.attenuation.z * dist * dist);
     float spec = pow(max(dot(viewDir, reflectDir), 0.0), material.shininess);
     vec3 ambient = light.color * material.ambient;
@@ -195,4 +213,5 @@ void main()
         result += calcSpotLight(i, newNorm, fragPos, fragToView);
     result *= useTexture ? texture(ordTex, fs_in.texCoord).rgb : vec3(1.0f);
     fragColor = vec4(result, 1.0);
+    fragColor.rgb = pow(fragColor.rgb, vec3(1.0 / gamma));
 }

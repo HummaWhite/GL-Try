@@ -32,6 +32,8 @@ static FPSTimer fpsTimer;
 Light* spotLight = new Light(Light::SPOT, glm::vec3(0, 0, 0), VEC_UP, glm::vec3(1.0f, 1.0f, 1.0f), 10.0f, 12.5f, 6);
 bool cursorDisabled = 1, F1Pressed = 0;
 static int VERTICAL_SYNC = 1;
+static int GAMMA_CORRECTION = 0;
+static float GAMMA = 1.732f;
 
 void initGLFWdata();
 void framebufferSizeCallback(GLFWwindow* window, int width, int height);
@@ -91,11 +93,17 @@ void processInput(GLFWwindow* window)
         camera.move(GLFW_KEY_A);
     if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
         camera.move(GLFW_KEY_D);
+    if (glfwGetKey(window, GLFW_KEY_Q) == GLFW_PRESS)
+        camera.move(GLFW_KEY_Q);
+    if (glfwGetKey(window, GLFW_KEY_E) == GLFW_PRESS)
+        camera.move(GLFW_KEY_E);
+    if (glfwGetKey(window, GLFW_KEY_R) == GLFW_PRESS)
+        camera.move(GLFW_KEY_R);
     if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS)
         camera.move(GLFW_KEY_LEFT_SHIFT);
     if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS)
         camera.move(GLFW_KEY_SPACE);
-    if (glfwGetKey(window, GLFW_KEY_Q) == GLFW_PRESS)
+    if (glfwGetKey(window, GLFW_KEY_F) == GLFW_PRESS)
         spotLight->color = glm::vec3(1.0, 1.0, 1.0);
     else
         spotLight->color = glm::vec3(0.0f, 0.0f, 0.0f);
@@ -148,18 +156,24 @@ int main()
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     glEnable(GL_DEPTH_TEST);
     glDepthFunc(GL_LEQUAL);
+    //glEnable(GL_FRAMEBUFFER_SRGB);
 
     Shape cube;
     //cube.loadCube();
-    cube.loadSphere(12, 6, 1.0f);
+    cube.loadSphere(240, 120, 1.0f);
     //cube.loadCone(240, 1.0f, 2.0f);
-    //cube.loadTorus(240, 120, 0.3f, 0.1f);
-    //cube.loadTeapot(0.2);
+    //cube.loadTorus(240, 120, 0.5f, 0.2f);
     cube.addTangents();
     VertexBuffer vb(cube);
     VertexArray va;
     va.addBuffer(vb, cube.layout());
     Shader shader("res/shader/normalMap.shader");
+    Shape square;
+    square.loadSquare();
+    square.addTangents();
+    VertexBuffer sqVb(square);
+    VertexArray sqVa;
+    sqVa.addBuffer(sqVb, square.layout());
 
     VertexArray lightVa;
     lightVa.addBuffer(vb, cube.layout());
@@ -170,23 +184,20 @@ int main()
     Light* light2 = new Light(Light::POINT, glm::vec3(6.0f, -6.0f, 0), glm::vec3(1.0f, 0.0f, 1.0f));
     Light* light3 = new Light(Light::POINT, glm::vec3(-4.0, -2.0f, -1.0f), glm::vec3(0.2f, 0.5f, 0.9f));
     int light0AttenLevel = 8;
-    //light2->color = glm::vec3(1.0f, 1.0f, 1.0f);
-    //light3->color = glm::vec3(1.0f, 1.0f, 1.0f);
     light->setAttenuationLevel(8);
     light2->setAttenuationLevel(8);
     light3->setAttenuationLevel(8);
     lights.push_back(light);
     lights.push_back(light2);
     lights.push_back(light3);
-    for (int i = 3; i < pointLightCount; i++)
+    /*for (int i = 3; i < pointLightCount; i++)
     {
         glm::vec3 pos((rand() % 24) - 12, (rand() % 24) - 12, (rand() % 24) - 12);
         glm::vec3 color((float)(rand() % 256) / 256, (float)(rand() % 256) / 256, (float)(rand() % 256) / 256);
         Light* extraLight = new Light(Light::POINT, pos, color);
-        //extraLight->color = glm::vec3(1.0f, 1.0f, 1.0f);
         //extraLight->setAttenuationLevel(8);
         lights.push_back(extraLight);
-    }
+    }*/
     lights.push_back(spotLight);
     spotLight->setAttenuationLevel(8);
 
@@ -229,10 +240,6 @@ int main()
         depthBufferTex[i].unbind();
     }
 
-    Texture paraMap;
-    paraMap.loadSingle("res/texture/diamond_ore_s.png");
-    shader.setTexture("paraMap", paraMap);
-    shader.setUniform1f("paraStrength", 0.9f);
     Texture normMap;
     normMap.loadSingle("res/texture/crafting_table_front_n.png");
     //normMap.loadSingle("res/texture/diamond_ore_n.png");
@@ -242,7 +249,6 @@ int main()
     //ordTex.loadSingle("res/texture/diamond_ore.png");
     shader.setTexture("ordTex", ordTex);
     ordTex.bind();
-    paraMap.bind();
     normMap.bind();
 
     glm::mat4 model(1.0f);
@@ -264,6 +270,7 @@ int main()
         glm::vec3(-1.3f,  1.0f, -1.5f)
     };
 
+    int objectCount = 4;
     glm::vec3 objectColor = glm::vec3(0.4f, 0.5f, 0.7f);
     objectColor = glm::vec3(1.0f, 1.0f, 1.0f) * 1.0f;
     glm::vec3 matAmbient(objectColor * 0.035f);
@@ -272,7 +279,7 @@ int main()
     float matShininess = 16.0f;
     Shader shadowShader("res/shader/shadow.shader");
 
-    int useTexture = 1;
+    int useTexture = 0;
     int useNormalMap = 1;
 
     IMGUI_CHECKVERSION();
@@ -320,16 +327,15 @@ int main()
                 shadowShader.setUniformMat4(("shadowMatrices[" + std::to_string(i) + "]").c_str(), shadowTransforms[i]);
             shadowShader.setUniform1f("farPlane", shadowFar);
             shadowShader.setUniformVec3("lightPos", lightPos);
-            for (int i = 0; i < 10; i++)
+            for (int i = 0; i < objectCount; i++)
             {
                 model = glm::mat4(1.0f);
                 model = glm::rotate(glm::mat4(1.0f), glm::radians(-55.0f), glm::vec3(0.0f, 0.0f, 1.0f));
                 float scale = (float)i / 5 + 1;
                 model = glm::translate(model, cubePositions[i]);
                 model = glm::scale(model, glm::vec3(scale, scale, scale));
-                model = glm::rotate(model, glm::radians(timeValue * 30.0f * i + 20.0f * i), glm::vec3(1.0f, 0.3f, 0.5f));
+                //model = glm::rotate(model, glm::radians(timeValue * 30.0f * i + 20.0f * i), glm::vec3(1.0f, 0.3f, 0.5f));
                 shadowShader.setUniformMat4("model", model);
-                shader.setUniformVec3("centerPos", cubePositions[i]);
                 renderer.draw(va, shadowShader);
             }
             depthBuffer[i].unbind();
@@ -347,6 +353,8 @@ int main()
         shader.setMaterial(matAmbient, matDiffuse, matSpecular, matShininess);
         shader.setUniform1i("useTexture", useTexture);
         shader.setUniform1i("useNormalMap", useNormalMap);
+        shader.setUniform1i("gammaCorrection", GAMMA_CORRECTION);
+        shader.setUniform1f("gamma", GAMMA);
         for (int i = 0; i < pointLightCount; i++)
         {
             depthBufferTex[i].bind();
@@ -354,25 +362,26 @@ int main()
         }
         shader.setUniform1f("farPlane", shadowFar);
 
-        for (int i = 0; i < 10; i++)
+        for (int i = 0; i < objectCount; i++)
         {
             model = glm::mat4(1.0f);
             model = glm::rotate(glm::mat4(1.0f), glm::radians(-55.0f), glm::vec3(0.0f, 0.0f, 1.0f));
             float scale = (float)i / 5 + 1;
             model = glm::translate(model, cubePositions[i]);
             model = glm::scale(model, glm::vec3(scale, scale, scale));
-            model = glm::rotate(model, glm::radians(timeValue * 30.0f * i + 20.0f * i), glm::vec3(1.0f, 0.3f, 0.5f));
+            //model = glm::rotate(model, glm::radians(timeValue * 30.0f * i + 20.0f * i), glm::vec3(1.0f, 0.3f, 0.5f));
             shader.useModelMatrix(model);
             renderer.draw(va, shader);
         }
 
         model = glm::mat4(1.0f);
+        model = glm::translate(model, glm::vec3(0.0, 0.0, -5.0f));
         model = glm::scale(model, glm::vec3(40.0f, 40.0f, 40.0f));
         glm::vec3 wallColor(1.0f, 1.0f, 1.0f);
         shader.useModelMatrix(model);
-        shader.setUniform1f("normDir", -1.0);
-        shader.setMaterial(wallColor * 0.05f, wallColor * 1.0f, wallColor * 0.7f, 32.0f);
-        renderer.draw(va, shader);
+        //shader.setUniform1f("normDir", -1.0);
+        shader.setMaterial(wallColor * 0.05f, wallColor * 0.7f, wallColor * 0.0f, 2.0f);
+        renderer.draw(sqVa, shader);
 
         lightShader.enable();
         lightShader.setUniformMat4("proj", proj);
@@ -381,11 +390,11 @@ int main()
         spotLight->dir = camera.pointing();
         for (int i = 0; i < lights.size(); i++)
         {
-            if (lights[i]->type != Light::POINT) continue;
+            if (lights[i] == spotLight) continue;
             model = glm::translate(glm::mat4(1.0f), lights[i]->pos);
             lightShader.setUniformMat4("model", model);
             lightShader.setUniformVec3("lightColor", glm::length(lights[i]->color) * glm::normalize(lights[i]->color));
-            renderer.draw(va, lightShader);
+            renderer.draw(sphereVa, lightShader);
         }
 
         skyboxShader.enable();
@@ -418,6 +427,8 @@ int main()
                 ImGui::SliderFloat("Shininess", &matShininess, 2.0f, 48.0f);
                 ImGui::SliderInt("Texture on", &useTexture, 0, 1);
                 ImGui::SliderInt("NormalMap on", &useNormalMap, 0, 1);
+                ImGui::SliderInt("Gamma correction", &GAMMA_CORRECTION, 0, 1);
+                ImGui::SliderFloat("Gamma", &GAMMA, 1.0f, 4.0f);
                 ImGui::Text("x: %.3f y: %.3f z: %.3f  FOV: %.1f", camera.pos().x, camera.pos().y, camera.pos().z, camera.FOV());
                 ImGui::Text("Render Time: %.3f ms, FPS: %.3f", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
                 ImGui::Text("\n");

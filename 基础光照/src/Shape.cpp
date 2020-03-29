@@ -91,6 +91,19 @@ void Shape::loadCube()
 	m_Type = CUBE;
 }
 
+void Shape::loadSquare()
+{
+	if (m_Type)
+	{
+		std::cout << "Already loaded" << std::endl;
+		return;
+	}
+	m_Buffer = new float[48];
+	memcpy(m_Buffer, SQUARE_VERTICES, 48 * sizeof(float));
+	m_VertexCount = 6;
+	m_Type = SQUARE;
+}
+
 void Shape::loadCone(int faces, float radius, float height)
 {
 	if (m_Type)
@@ -223,52 +236,4 @@ void Shape::loadTorus(int columns, int rows, float majorRadius, float minorRadiu
 		Q.pop();
 	}
 	m_Type = TORUS;
-}
-
-void Shape::loadTeapot(float size)
-{
-	if (m_Type)
-	{
-		std::cout << "Already loaded" << std::endl;
-		return;
-	}
-	m_VertexCount = 6320 * 3;
-	FILE* fp = fopen("res/model/teapot.txt", "r+");
-	if (fp == nullptr)
-	{
-		std::cout << "Model missing" << std::endl;
-		return;
-	}
-	char tmp[2];
-	const int mergedVertexCount = 3644;
-	glm::vec3 vertices[mergedVertexCount];
-	for (int i = 0; i < mergedVertexCount; i++)
-	{
-		fscanf(fp, "%s", tmp);
-		fscanf(fp, "%f%f%f", &vertices[i].x, &vertices[i].y, &vertices[i].z);
-		vertices[i] *= size;
-	}
-	std::queue<float> Q;
-	for (int i = 0; i < 6320; i++)
-	{
-		fscanf(fp, "%s", tmp);
-		int indA, indB, indC;
-		fscanf(fp, "%d%d%d", &indA, &indB, &indC);
-		glm::vec3 A = vertices[indA - 1];
-		glm::vec3 B = vertices[indB - 1];
-		glm::vec3 C = vertices[indC - 1];
-		glm::vec3 va = A - C;
-		glm::vec3 vb = B - C;
-		glm::vec3 norm = glm::normalize(glm::cross(va, vb));
-		Q.push(A.x), Q.push(A.y), Q.push(A.z), Q.push(0), Q.push(0), Q.push(norm.x), Q.push(norm.y), Q.push(norm.z);
-		Q.push(B.x), Q.push(B.y), Q.push(B.z), Q.push(0), Q.push(0), Q.push(norm.x), Q.push(norm.y), Q.push(norm.z);
-		Q.push(C.x), Q.push(C.y), Q.push(C.z), Q.push(0), Q.push(0), Q.push(norm.x), Q.push(norm.y), Q.push(norm.z);
-	}
-	m_Buffer = new float[m_VertexCount * 8];
-	for (int i = 0; i < m_VertexCount * 8; i++)
-	{
-		m_Buffer[i] = Q.front();
-		Q.pop();
-	}
-	m_Type = TEAPOT;
 }

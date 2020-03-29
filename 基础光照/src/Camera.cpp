@@ -25,6 +25,15 @@ void Camera::move(GLuint key)
 		m_Pos.y -= CAMERA_MOVE_SENSITIVITY * cos(m_Angle.x);
 		m_Pos.x += CAMERA_MOVE_SENSITIVITY * sin(m_Angle.x);
 		break;
+	case GLFW_KEY_Q:
+		roll(-CAMERA_ROLL_SENSITIVITY);
+		break;
+	case GLFW_KEY_E:
+		roll(CAMERA_ROLL_SENSITIVITY);
+		break;
+	case GLFW_KEY_R:
+		m_CameraUp = VEC_UP;
+		break;
 	case GLFW_KEY_SPACE:
 		m_Pos.z += CAMERA_MOVE_SENSITIVITY;
 		break;
@@ -32,6 +41,14 @@ void Camera::move(GLuint key)
 		m_Pos.z -= CAMERA_MOVE_SENSITIVITY;
 		break;
 	}
+	m_Pointing = pointing();
+}
+
+void Camera::roll(float angle)
+{
+	glm::mat4 mul(1.0f);
+	mul = glm::rotate(mul, angle, m_Pointing);
+	m_CameraUp = glm::vec3(mul * glm::vec4(m_CameraUp, 1.0f));
 }
 
 void Camera::rotate(glm::vec3 angle)
@@ -39,6 +56,7 @@ void Camera::rotate(glm::vec3 angle)
 	m_Angle += angle * CAMERA_ROTATE_SENSITIVITY;
 	if (m_Angle.y > CAMERA_PITCH_LIMIT) m_Angle.y = CAMERA_PITCH_LIMIT;
 	if (m_Angle.y < -CAMERA_PITCH_LIMIT) m_Angle.y = -CAMERA_PITCH_LIMIT;
+	m_Pointing = pointing();
 }
 
 void Camera::changeFOV(float offset)
@@ -54,6 +72,7 @@ void Camera::setDir(glm::vec3 dir)
 	m_Angle.y = asin(dir.z / glm::length(dir));
 	glm::vec2 dxy = dir;
 	m_Angle.x = asin(dir.y / glm::length(dxy));
+	m_Pointing = pointing();
 }
 
 glm::vec3 Camera::pointing() const
@@ -70,12 +89,12 @@ glm::mat4 Camera::getViewMatrix()
 	float aY = cos(m_Angle.y) * sin(m_Angle.x);
 	float aZ = sin(m_Angle.y);
 	glm::vec3 lookingAt = m_Pos + glm::vec3(aX, aY, aZ);
-	glm::mat4 view = glm::lookAt(m_Pos, lookingAt, VEC_UP);
+	glm::mat4 view = glm::lookAt(m_Pos, lookingAt, m_CameraUp);
 	return view;
 }
 
 glm::mat4 Camera::getViewMatrix(glm::vec3 targetPos)
 {
-	glm::mat4 view = glm::lookAt(m_Pos, targetPos, VEC_UP);
+	glm::mat4 view = glm::lookAt(m_Pos, targetPos, m_CameraUp);
 	return view;
 }
