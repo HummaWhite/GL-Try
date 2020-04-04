@@ -25,6 +25,7 @@
 
 const int W_WIDTH = 1280;
 const int W_HEIGHT = 720;
+const int SHADOW_RES = 1024;
 
 static Renderer renderer;
 static Camera camera(glm::vec3(0, 0, -3));
@@ -33,7 +34,7 @@ Light* spotLight = new Light(Light::SPOT, glm::vec3(0, 0, 0), VEC_UP, glm::vec3(
 bool cursorDisabled = 1, F1Pressed = 0;
 static int VERTICAL_SYNC = 1;
 static int GAMMA_CORRECTION = 0;
-static float GAMMA = 1.732f;
+static float GAMMA = 2.20f;
 
 void initGLFWdata();
 void framebufferSizeCallback(GLFWwindow* window, int width, int height);
@@ -44,10 +45,9 @@ void processInput(GLFWwindow* window);
 void initGLFWdata()
 {
     glfwInit();
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-    //glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
 }
 
 void framebufferSizeCallback(GLFWwindow* window, int width, int height)
@@ -159,10 +159,11 @@ int main()
     //glEnable(GL_FRAMEBUFFER_SRGB);
 
     Shape cube;
-    //cube.loadCube();
-    cube.loadSphere(240, 120, 1.0f);
+    cube.loadCube();
+    //cube.loadSquare();
+    //cube.loadSphere(6, 6, 1.0f);
     //cube.loadCone(240, 1.0f, 2.0f);
-    //cube.loadTorus(240, 120, 0.5f, 0.2f);
+    //cube.loadTorus(120, 60, 0.5f, 0.2f);
     cube.addTangents();
     VertexBuffer vb(cube);
     VertexArray va;
@@ -190,14 +191,6 @@ int main()
     lights.push_back(light);
     lights.push_back(light2);
     lights.push_back(light3);
-    /*for (int i = 3; i < pointLightCount; i++)
-    {
-        glm::vec3 pos((rand() % 24) - 12, (rand() % 24) - 12, (rand() % 24) - 12);
-        glm::vec3 color((float)(rand() % 256) / 256, (float)(rand() % 256) / 256, (float)(rand() % 256) / 256);
-        Light* extraLight = new Light(Light::POINT, pos, color);
-        //extraLight->setAttenuationLevel(8);
-        lights.push_back(extraLight);
-    }*/
     lights.push_back(spotLight);
     spotLight->setAttenuationLevel(8);
 
@@ -236,8 +229,8 @@ int main()
     for (int i = 0; i < pointLightCount; i++)
     {
         depthBufferTex[i].bind();
-        depthBufferTex[i].attachDepthBufferCube(depthBuffer[i]);
-        depthBufferTex[i].unbind();
+        depthBufferTex[i].attachDepthBufferCube(depthBuffer[i], SHADOW_RES);
+        //depthBufferTex[i].unbind();
     }
 
     Texture normMap;
@@ -248,8 +241,16 @@ int main()
     ordTex.loadSingle("res/texture/crafting_table_front.png");
     //ordTex.loadSingle("res/texture/diamond_ore.png");
     shader.setTexture("ordTex", ordTex);
-    ordTex.bind();
-    normMap.bind();
+
+    Shader scrShader("res/shader/frameBuffer.shader");
+    VertexBuffer scrVb(SCREEN_COORD, 6, sizeof(SCREEN_COORD));
+    VertexBufferLayout scrLayout;
+    scrLayout.add<float>(2);
+    VertexArray scrVa;
+    scrVa.addBuffer(scrVb, scrLayout);
+    Texture FBTex;
+    FrameBuffer scrFB;
+    FBTex.attachFrameBuffer2D(scrFB, W_WIDTH, W_HEIGHT);
 
     glm::mat4 model(1.0f);
     glm::mat4 view(1.0f);
@@ -303,11 +304,11 @@ int main()
         //light->pos.x = cos(timeValue * 3.0f) * 6.0f;
         //light->pos.z = sin(timeValue * 0.7f) * 4.0f;
 
-        float aspect = (float)Texture::SHADOW_WIDTH / (float)Texture::SHADOW_HEIGHT;
+        float aspect = 1.0f;
         float shadowNear = 0.1f;
         float shadowFar = 50.0f;
         glm::mat4 shadowProj = glm::perspective(glm::radians(90.0f), aspect, shadowNear, shadowFar);
-        glViewport(0, 0, Texture::SHADOW_HEIGHT, Texture::SHADOW_WIDTH);
+        glViewport(0, 0, SHADOW_RES, SHADOW_RES);
         shadowShader.enable();
 
         for (int i = 0; i < pointLightCount; i++)
@@ -342,7 +343,10 @@ int main()
         }
 
         glViewport(0, 0, W_WIDTH, W_HEIGHT);
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        scrFB.bind();
+        renderer.clear();
+        ordTex.bind();
+        normMap.bind();
 
         shader.enable();
         shader.setUniformMat4("proj", proj);
@@ -403,6 +407,14 @@ int main()
         skyboxShader.setUniformMat4("proj", proj);
         skyboxShader.setUniformMat4("view", glm::mat4(glm::mat3(camera.getViewMatrix())));
         renderer.draw(skyboxVa, skyboxShader);
+
+        scrFB.unbind();
+
+        renderer.clear();
+
+        scrShader.enable();
+        scrShader.setTexture("frameBuffer", FBTex);
+        renderer.draw(scrVa, scrShader);
 
         ImGui_ImplOpenGL3_NewFrame();
         ImGui_ImplGlfw_NewFrame();

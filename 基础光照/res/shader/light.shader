@@ -1,5 +1,5 @@
 //$Vertex
-#version 330 core
+#version 430 core
 layout(location = 0) in vec3 pos;
 uniform mat4 model;
 uniform mat4 view;
@@ -12,7 +12,7 @@ void main()
 }
 
 //$Fragment
-#version 330 core
+#version 430 core
 out vec4 fragColor;
 uniform vec3 lightColor;
 

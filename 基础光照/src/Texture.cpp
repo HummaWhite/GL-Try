@@ -84,7 +84,7 @@ void Texture::loadCube(const std::vector<std::string>& filePaths, GLuint type)
 	slot = m_SlotsUsed++;
 }
 
-void Texture::attachDepthBufferCube(const FrameBuffer& depthBuffer)
+void Texture::attachDepthBufferCube(const FrameBuffer& depthBuffer, int resolution)
 {
 	if (m_Loaded)
 	{
@@ -99,7 +99,7 @@ void Texture::attachDepthBufferCube(const FrameBuffer& depthBuffer)
 		glTexImage2D
 		(
 			GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_DEPTH_COMPONENT,
-			SHADOW_WIDTH, SHADOW_HEIGHT, 0, GL_DEPTH_COMPONENT, GL_FLOAT, nullptr
+			resolution, resolution, 0, GL_DEPTH_COMPONENT, GL_FLOAT, nullptr
 		);
 	}
 
@@ -132,14 +132,57 @@ void Texture::attachFrameBuffer2D(const FrameBuffer& frameBuffer, AttachmentType
 	m_TextureType = GL_TEXTURE_2D;
 	glBindTexture(m_TextureType, ID);
 
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB16F, width, height, 0, GL_RGB, GL_FLOAT, nullptr);
+	GLuint format = 0;
+	switch (type)
+	{
+		case COLOR_0:
+		case COLOR_1:
+		case COLOR_2:
+		case COLOR_3:
+		case COLOR_4:
+			format = GL_RGBA;
+			break;
+		case DEPTH:
+			format = GL_DEPTH_COMPONENT;
+			break;
+	}
+	glTexImage2D(m_TextureType, 0, format, width, height, 0, format, GL_FLOAT, nullptr);
 
 	glTexParameteri(m_TextureType, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 	glTexParameteri(m_TextureType, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 
 	frameBuffer.bind();
-	glFramebufferTexture2D(GL_FRAMEBUFFER, type, GL_TEXTURE_2D, ID, 0);
+	glFramebufferTexture2D(GL_FRAMEBUFFER, type, m_TextureType, ID, 0);
 	frameBuffer.unbind();
+
+	if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
+		std::cout << "Error: framebuffer not complete" << std::endl;
+
+	glBindTexture(m_TextureType, 0);
+	m_Loaded = true;
+	slot = m_SlotsUsed++;
+}
+
+void Texture::attachFrameBuffer2D(const FrameBuffer& frameBuffer, int width, int height)
+{
+	if (m_Loaded)
+	{
+		std::cout << "Error: texture already loaded for this object" << std::endl;
+		return;
+	}
+	m_TextureType = GL_TEXTURE_2D;
+	glBindTexture(m_TextureType, ID);
+
+	glTexImage2D(m_TextureType, 0, GL_RGB, width, height, 0, GL_RGB, GL_FLOAT, nullptr);
+
+	glTexParameteri(m_TextureType, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glTexParameteri(m_TextureType, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+
+	frameBuffer.bind();
+	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH32F_STENCIL8, width, height);
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, m_TextureType, ID, 0);
+	frameBuffer.attachRenderBuffer();
+	//frameBuffer.unbind();
 
 	if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
 		std::cout << "Error: framebuffer not complete" << std::endl;

@@ -14,6 +14,8 @@ public:
 
 	void bind() const;
 	void unbind() const;
+	void attachRenderBuffer() const;
 private:
-	GLuint ID;
+	GLuint fbID, rbID;
+	bool renderBufferExist;
 };

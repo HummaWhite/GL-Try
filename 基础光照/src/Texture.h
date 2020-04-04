@@ -36,8 +36,9 @@ public:
 
 	void loadSingle(const std::string& filePath, GLuint type = GL_LINEAR);
 	void loadCube(const std::vector<std::string>& filePaths, GLuint type = GL_LINEAR);
-	void attachDepthBufferCube(const FrameBuffer& frameBuffer);
+	void attachDepthBufferCube(const FrameBuffer& frameBuffer, int resolution);
 	void attachFrameBuffer2D(const FrameBuffer& frameBuffer, AttachmentType type, int width, int height);
+	void attachFrameBuffer2D(const FrameBuffer& frameBuffer, int width, int height);
 
 	void bind() const;
 	void bind(int slot) const;
@@ -45,9 +46,6 @@ public:
 
 	int width() const { return m_Width; }
 	int height() const { return m_Height; }
-
-	static const int SHADOW_WIDTH = 1024;
-	static const int SHADOW_HEIGHT = 1024;
 
 	int slot;
 private:

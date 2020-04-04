@@ -1,5 +1,5 @@
 //$Vertex
-#version 330 core
+#version 430 core
 layout(location = 0) in vec3 pos;
 layout(location = 1) in vec2 texCoord;
 layout(location = 2) in vec3 normal;
@@ -37,7 +37,7 @@ void main()
 }
 
 //$Fragment
-#version 330 core
+#version 430 core
 const int MAX_LIGHTS_DIR = 2;
 const int MAX_LIGHTS_POINT = 8;
 const int MAX_LIGHTS_SPOT = 8;
