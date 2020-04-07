@@ -15,7 +15,7 @@ Texture::~Texture()
 	glDeleteTextures(1, &ID);
 }
 
-void Texture::loadSingle(const std::string& filePath, GLuint type)
+void Texture::loadSingle(const std::string& filePath, GLuint internalType, GLuint filterType)
 {
 	if (m_Loaded)
 	{
@@ -33,9 +33,9 @@ void Texture::loadSingle(const std::string& filePath, GLuint type)
 		return;
 	}
 
-	glTexImage2D(m_TextureType, 0, GL_RGBA, m_Width, m_Height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
-	glTexParameteri(m_TextureType, GL_TEXTURE_MIN_FILTER, type);
-	glTexParameteri(m_TextureType, GL_TEXTURE_MAG_FILTER, type);
+	glTexImage2D(m_TextureType, 0, internalType, m_Width, m_Height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
+	glTexParameteri(m_TextureType, GL_TEXTURE_MIN_FILTER, filterType);
+	glTexParameteri(m_TextureType, GL_TEXTURE_MAG_FILTER, filterType);
 	glTexParameteri(m_TextureType, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 	glTexParameteri(m_TextureType, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 	glBindTexture(m_TextureType, 0);
@@ -45,7 +45,7 @@ void Texture::loadSingle(const std::string& filePath, GLuint type)
 	slot = m_SlotsUsed++;
 }
 
-void Texture::loadCube(const std::vector<std::string>& filePaths, GLuint type)
+void Texture::loadCube(const std::vector<std::string>& filePaths, GLuint internalType, GLuint filterType)
 {
 	if (m_Loaded)
 	{
@@ -68,13 +68,13 @@ void Texture::loadCube(const std::vector<std::string>& filePaths, GLuint type)
 		glTexImage2D
 		(
 			GL_TEXTURE_CUBE_MAP_POSITIVE_X + i,
-			0, GL_RGBA, m_Width, m_Height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data
+			0, internalType, m_Width, m_Height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data
 		);
 		stbi_image_free(data);
 	}
 
-	glTexParameteri(m_TextureType, GL_TEXTURE_MAG_FILTER, type);
-	glTexParameteri(m_TextureType, GL_TEXTURE_MIN_FILTER, type);
+	glTexParameteri(m_TextureType, GL_TEXTURE_MAG_FILTER, filterType);
+	glTexParameteri(m_TextureType, GL_TEXTURE_MIN_FILTER, filterType);
 	glTexParameteri(m_TextureType, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 	glTexParameteri(m_TextureType, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 	glTexParameteri(m_TextureType, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
@@ -122,7 +122,7 @@ void Texture::attachDepthBufferCube(const FrameBuffer& depthBuffer, int resoluti
 	slot = m_SlotsUsed++;
 }
 
-void Texture::attachFrameBuffer2D(const FrameBuffer& frameBuffer, AttachmentType type, int width, int height)
+void Texture::attachFrameBuffer2D(const FrameBuffer& frameBuffer, GLuint type, int width, int height)
 {
 	if (m_Loaded)
 	{
@@ -132,21 +132,7 @@ void Texture::attachFrameBuffer2D(const FrameBuffer& frameBuffer, AttachmentType
 	m_TextureType = GL_TEXTURE_2D;
 	glBindTexture(m_TextureType, ID);
 
-	GLuint format = 0;
-	switch (type)
-	{
-		case COLOR_0:
-		case COLOR_1:
-		case COLOR_2:
-		case COLOR_3:
-		case COLOR_4:
-			format = GL_RGBA;
-			break;
-		case DEPTH:
-			format = GL_DEPTH_COMPONENT;
-			break;
-	}
-	glTexImage2D(m_TextureType, 0, format, width, height, 0, format, GL_FLOAT, nullptr);
+	glTexImage2D(m_TextureType, 0, type, width, height, 0, type, GL_FLOAT, nullptr);
 
 	glTexParameteri(m_TextureType, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 	glTexParameteri(m_TextureType, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
@@ -163,7 +149,7 @@ void Texture::attachFrameBuffer2D(const FrameBuffer& frameBuffer, AttachmentType
 	slot = m_SlotsUsed++;
 }
 
-void Texture::attachFrameBuffer2D(const FrameBuffer& frameBuffer, int width, int height)
+void Texture::attachColorBuffer2D(const FrameBuffer& frameBuffer, int width, int height, GLuint colorFormat)
 {
 	if (m_Loaded)
 	{
@@ -173,7 +159,7 @@ void Texture::attachFrameBuffer2D(const FrameBuffer& frameBuffer, int width, int
 	m_TextureType = GL_TEXTURE_2D;
 	glBindTexture(m_TextureType, ID);
 
-	glTexImage2D(m_TextureType, 0, GL_RGB, width, height, 0, GL_RGB, GL_FLOAT, nullptr);
+	glTexImage2D(m_TextureType, 0, colorFormat, width, height, 0, GL_RGB, GL_FLOAT, nullptr);
 
 	glTexParameteri(m_TextureType, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 	glTexParameteri(m_TextureType, GL_TEXTURE_MIN_FILTER, GL_NEAREST);

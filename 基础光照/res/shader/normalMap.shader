@@ -114,7 +114,6 @@ uniform sampler2D ordTex;
 uniform sampler2D normMap;
 uniform bool useTexture;
 uniform bool useNormalMap;
-uniform bool gammaCorrection;
 uniform float gamma;
 uniform vec3 centerPos;
 
@@ -122,7 +121,7 @@ float calcPointLightShadow(int index, vec3 fragPos, vec3 lightPos)
 {
     float shadow = 0.0;
     int samples = 20;
-    float bias = 0.12;
+    float bias = 0.06;
     vec3 fragToLight = fragPos - lightPos;
     float currentDepth = length(fragToLight);
     float viewDis = length(viewPos - fragPos);
@@ -156,10 +155,9 @@ vec3 calcPointLight(int index, vec3 norm, vec3 fragPos, vec3 viewDir)
     float diff = max(dot(norm, lightDir), 0.0f);
     vec3 reflectDir = reflect(-lightDir, norm);
     float dist = length(light.pos - fragPos);
-    float gammaC = 1.0 - float(gammaCorrection);
     float attenuation = 1.0 / (
-        light.attenuation.x * gammaC +
-        light.attenuation.y * dist * gammaC +
+        light.attenuation.x +
+        light.attenuation.y * dist +
         light.attenuation.z * dist * dist);
     float spec = pow(max(dot(viewDir, reflectDir), 0.0), material.shininess);
     vec3 ambient = light.color * material.ambient;
@@ -176,10 +174,9 @@ vec3 calcSpotLight(int index, vec3 norm, vec3 fragPos, vec3 viewDir)
     float diff = max(dot(norm, lightDir), 0.0f);
     vec3 reflectDir = reflect(-lightDir, norm);
     float dist = length(light.pos - fragPos);
-    float gammaC = 1.0 - float(gammaCorrection);
     float attenuation = 1.0 / (
-        light.attenuation.x * gammaC +
-        light.attenuation.y * dist * gammaC +
+        light.attenuation.x +
+        light.attenuation.y * dist +
         light.attenuation.z * dist * dist);
     float spec = pow(max(dot(viewDir, reflectDir), 0.0), material.shininess);
     vec3 ambient = light.color * material.ambient;
@@ -213,5 +210,4 @@ void main()
         result += calcSpotLight(i, newNorm, fragPos, fragToView);
     result *= useTexture ? texture(ordTex, fs_in.texCoord).rgb : vec3(1.0f);
     fragColor = vec4(result, 1.0);
-    fragColor.rgb = pow(fragColor.rgb, vec3(1.0 / gamma));
 }

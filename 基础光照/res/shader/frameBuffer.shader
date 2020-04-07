@@ -12,13 +12,22 @@ void main()
 
 //$Fragment
 #version 430 core
-uniform sampler2D frameBuffer;
 in vec2 texCoord;
 out vec4 fragColor;
 
+uniform sampler2D frameBuffer;
+uniform float gamma;
+uniform float exposure;
+
 void main()
 {
-	fragColor = texture(frameBuffer, texCoord);
-	fragColor = 1 - fragColor;
-	fragColor.w = 1.0f;
+	vec2 texPos = texCoord;
+	vec3 color = texture(frameBuffer, texPos).rgb;
+	vec3 mapped = vec3(1.0) - exp(-color * exposure);
+	mapped = pow(mapped, vec3(1.0 / gamma));
+	fragColor = vec4(mapped, 1.0);
 }
+//texPos = floor(texPos * 128) / 128;
+//fragColor = floor(fragColor * 8) / 8;
+//fragColor.w = 1.0;
+//fragColor = vec4(vec3(fragColor.r + fragColor.g + fragColor.b) / 3, 1.0);

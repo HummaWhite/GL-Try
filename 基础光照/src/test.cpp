@@ -30,11 +30,11 @@ const int SHADOW_RES = 1024;
 static Renderer renderer;
 static Camera camera(glm::vec3(0, 0, -3));
 static FPSTimer fpsTimer;
-Light* spotLight = new Light(Light::SPOT, glm::vec3(0, 0, 0), VEC_UP, glm::vec3(1.0f, 1.0f, 1.0f), 10.0f, 12.5f, 6);
+Light* spotLight = new Light(Light::SPOT, glm::vec3(0, 0, 0), VEC_UP, glm::vec3(1.0f, 1.0f, 1.0f), 10.0f, 12.5f, 8);
 bool cursorDisabled = 1, F1Pressed = 0;
 static int VERTICAL_SYNC = 1;
-static int GAMMA_CORRECTION = 0;
 static float GAMMA = 2.20f;
+static float EXPOSURE = 1.0f;
 
 void initGLFWdata();
 void framebufferSizeCallback(GLFWwindow* window, int width, int height);
@@ -181,48 +181,28 @@ int main()
     Shader lightShader("res/shader/light.shader");
     LightGroup lights;
     const int pointLightCount = 3;
-    Light* light = new Light(Light::POINT, glm::vec3(0, 0, 4.0f), glm::vec3(1.0f, 1.0f, 1.0f));
-    Light* light2 = new Light(Light::POINT, glm::vec3(6.0f, -6.0f, 0), glm::vec3(1.0f, 0.0f, 1.0f));
-    Light* light3 = new Light(Light::POINT, glm::vec3(-4.0, -2.0f, -1.0f), glm::vec3(0.2f, 0.5f, 0.9f));
+    Light* light = new Light(Light::POINT, glm::vec3(0, 0, 4.0f), glm::vec3(1.0f, 1.0f, 1.0f), 8);
+    Light* light2 = new Light(Light::POINT, glm::vec3(6.0f, -6.0f, 0), glm::vec3(1.0f, 0.0f, 1.0f), 8);
+    Light* light3 = new Light(Light::POINT, glm::vec3(-4.0, -2.0f, -1.0f), glm::vec3(0.2f, 0.5f, 0.9f), 8);
     int light0AttenLevel = 8;
-    light->setAttenuationLevel(8);
-    light2->setAttenuationLevel(8);
-    light3->setAttenuationLevel(8);
     lights.push_back(light);
     lights.push_back(light2);
     lights.push_back(light3);
     lights.push_back(spotLight);
-    spotLight->setAttenuationLevel(8);
 
-    int columns = 4, rows = 2;
+    int columns = 40, rows = 20;
     Shape sphere;
     sphere.loadSphere(columns, rows, 1.0f);
-    sphere.addTangents();
     VertexBuffer sphereVb(sphere);
     VertexArray sphereVa;
     sphereVa.addBuffer(sphereVb, sphere.layout());
 
-    VertexBuffer skyboxVb(SKYBOX_VERTICES, 36, sizeof(SKYBOX_VERTICES));
-    VertexBufferLayout skyboxLayout;
-    skyboxLayout.add<GL_FLOAT>(3);
-    VertexArray skyboxVa;
-    skyboxVa.addBuffer(skyboxVb, skyboxLayout);
-    std::vector<std::string> skyboxPath =
-    {
-        "res/texture/skybox/right.jpg",
-        "res/texture/skybox/left.jpg",
-        "res/texture/skybox/top.jpg",
-        "res/texture/skybox/bottom.jpg",
-        "res/texture/skybox/front.jpg",
-        "res/texture/skybox/back.jpg"
-    };
-    Texture skyboxTexture;
-    skyboxTexture.loadCube(skyboxPath);
-    Shader skyboxShader("res/shader/skybox.shader");
-    skyboxTexture.bind();
-    skyboxShader.setTexture("skybox", skyboxTexture);
+    Texture skyTexture;
+    skyTexture.loadSingle("res/texture/017.hdr", GL_SRGB);
+    Shader skyboxShader("res/shader/skyboxSphere.shader");
+    skyTexture.bind();
+    skyboxShader.setTexture("sky", skyTexture);
     glm::mat4 skyboxModel = glm::rotate(glm::mat4(1.0f), glm::radians(90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
-    skyboxShader.setUniformMat4("model", skyboxModel);
 
     FrameBuffer depthBuffer[pointLightCount];
     Texture depthBufferTex[pointLightCount];
@@ -250,7 +230,7 @@ int main()
     scrVa.addBuffer(scrVb, scrLayout);
     Texture FBTex;
     FrameBuffer scrFB;
-    FBTex.attachFrameBuffer2D(scrFB, W_WIDTH, W_HEIGHT);
+    FBTex.attachColorBuffer2D(scrFB, W_WIDTH, W_HEIGHT, GL_RGB16F);
 
     glm::mat4 model(1.0f);
     glm::mat4 view(1.0f);
@@ -288,7 +268,7 @@ int main()
     ImGuiIO& io = ImGui::GetIO(); (void)io;
     ImGui::StyleColorsDark();
     ImGui_ImplGlfw_InitForOpenGL(window, true);
-    ImGui_ImplOpenGL3_Init("#version 330");
+    ImGui_ImplOpenGL3_Init("#version 430");
 
     while (!glfwWindowShouldClose(window))
     {
@@ -347,6 +327,9 @@ int main()
         renderer.clear();
         ordTex.bind();
         normMap.bind();
+        light->attenuation.x = light->attenuation.y = 0;
+        light2->attenuation.x = light2->attenuation.y = 0;
+        light3->attenuation.x = light3->attenuation.y = 0;
 
         shader.enable();
         shader.setUniformMat4("proj", proj);
@@ -357,8 +340,6 @@ int main()
         shader.setMaterial(matAmbient, matDiffuse, matSpecular, matShininess);
         shader.setUniform1i("useTexture", useTexture);
         shader.setUniform1i("useNormalMap", useNormalMap);
-        shader.setUniform1i("gammaCorrection", GAMMA_CORRECTION);
-        shader.setUniform1f("gamma", GAMMA);
         for (int i = 0; i < pointLightCount; i++)
         {
             depthBufferTex[i].bind();
@@ -383,7 +364,6 @@ int main()
         model = glm::scale(model, glm::vec3(40.0f, 40.0f, 40.0f));
         glm::vec3 wallColor(1.0f, 1.0f, 1.0f);
         shader.useModelMatrix(model);
-        //shader.setUniform1f("normDir", -1.0);
         shader.setMaterial(wallColor * 0.05f, wallColor * 0.7f, wallColor * 0.0f, 2.0f);
         renderer.draw(sqVa, shader);
 
@@ -402,18 +382,17 @@ int main()
         }
 
         skyboxShader.enable();
-        skyboxTexture.bind();
-        skyboxShader.setUniform1i("skybox", skyboxTexture.slot);
+        skyboxShader.setTexture("sky", skyTexture);
         skyboxShader.setUniformMat4("proj", proj);
         skyboxShader.setUniformMat4("view", glm::mat4(glm::mat3(camera.getViewMatrix())));
-        renderer.draw(skyboxVa, skyboxShader);
+        renderer.draw(sphereVa, skyboxShader);
 
         scrFB.unbind();
-
         renderer.clear();
-
         scrShader.enable();
         scrShader.setTexture("frameBuffer", FBTex);
+        scrShader.setUniform1f("gamma", GAMMA);
+        scrShader.setUniform1f("exposure", EXPOSURE);
         renderer.draw(scrVa, scrShader);
 
         ImGui_ImplOpenGL3_NewFrame();
@@ -439,8 +418,8 @@ int main()
                 ImGui::SliderFloat("Shininess", &matShininess, 2.0f, 48.0f);
                 ImGui::SliderInt("Texture on", &useTexture, 0, 1);
                 ImGui::SliderInt("NormalMap on", &useNormalMap, 0, 1);
-                ImGui::SliderInt("Gamma correction", &GAMMA_CORRECTION, 0, 1);
                 ImGui::SliderFloat("Gamma", &GAMMA, 1.0f, 4.0f);
+                ImGui::SliderFloat("Exposure", &EXPOSURE, 0.01f, 20.0f);
                 ImGui::Text("x: %.3f y: %.3f z: %.3f  FOV: %.1f", camera.pos().x, camera.pos().y, camera.pos().z, camera.FOV());
                 ImGui::Text("Render Time: %.3f ms, FPS: %.3f", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
                 ImGui::Text("\n");
