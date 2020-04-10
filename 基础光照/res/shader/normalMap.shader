@@ -38,6 +38,7 @@ void main()
 
 //$Fragment
 #version 430 core
+const float Pi = 3.1415926535897;
 const int MAX_LIGHTS_DIR = 2;
 const int MAX_LIGHTS_POINT = 8;
 const int MAX_LIGHTS_SPOT = 8;
@@ -61,7 +62,8 @@ struct Material
     vec3 specular;
     float shininess;
     sampler2D normalMap;
-    sampler2D parallaxMap;
+    sampler2D reflMap;
+    float reflStrength;
 };
 
 struct DirLight
@@ -111,9 +113,9 @@ uniform vec4 vertexColor;
 uniform samplerCube depthMapPoint[MAX_LIGHTS_POINT];
 uniform float farPlane;
 uniform sampler2D ordTex;
-uniform sampler2D normMap;
 uniform bool useTexture;
 uniform bool useNormalMap;
+uniform bool useReflMap;
 uniform float gamma;
 uniform vec3 centerPos;
 
@@ -188,16 +190,19 @@ vec3 calcSpotLight(int index, vec3 norm, vec3 fragPos, vec3 viewDir)
     return (ambient + diffuse + specular) * attenuation * intensity;
 }
 
-float linearDepth(float depth)
+vec2 sphereCoord(vec3 norm)
 {
-    float z = depth * 2.0 - 1.0;
-    return (2.0 * NEAR * FAR) / (FAR + NEAR - z * (FAR - NEAR));
+    vec3 ref = reflect(-normalize(viewPos - fs_in.fragPos), norm);
+    float theta = atan(ref.y, ref.x);
+    if (theta < 0.0) theta += Pi * 2;
+    float phi = atan(length(ref.xy), ref.z);
+    return vec2(theta / Pi / 2.0, phi / Pi);
 }
 
 void main()
 {
     vec3 result = vec3(0, 0, 0);
-    vec3 addNorm = texture(normMap, fs_in.texCoord).rgb;
+    vec3 addNorm = texture(material.normalMap, fs_in.texCoord).rgb;
     addNorm = normalize(addNorm * 2.0 - 1.0);
     vec3 newNorm = useNormalMap ? normalize(fs_in.TBN * addNorm) : fs_in.normal;
     vec3 fragPos = fs_in.fragPos;
@@ -209,5 +214,7 @@ void main()
     for (int i = 0; i < spotLightsCount; i++)
         result += calcSpotLight(i, newNorm, fragPos, fragToView);
     result *= useTexture ? texture(ordTex, fs_in.texCoord).rgb : vec3(1.0f);
+    vec3 reflColor = texture(material.reflMap, sphereCoord(newNorm)).rgb;
+    result = useReflMap ? material.reflStrength * reflColor + (1.0 - material.reflStrength) * result : result;
     fragColor = vec4(result, 1.0);
 }

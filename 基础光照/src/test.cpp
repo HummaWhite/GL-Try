@@ -34,7 +34,7 @@ Light* spotLight = new Light(Light::SPOT, glm::vec3(0, 0, 0), VEC_UP, glm::vec3(
 bool cursorDisabled = 1, F1Pressed = 0;
 static int VERTICAL_SYNC = 1;
 static float GAMMA = 2.20f;
-static float EXPOSURE = 1.0f;
+static float EXPOSURE = 2.0f;
 
 void initGLFWdata();
 void framebufferSizeCallback(GLFWwindow* window, int width, int height);
@@ -216,9 +216,9 @@ int main()
     Texture normMap;
     normMap.loadSingle("res/texture/crafting_table_front_n.png");
     //normMap.loadSingle("res/texture/diamond_ore_n.png");
-    shader.setTexture("normMap", normMap);
+    shader.setTexture("material.normalMap", normMap);
     Texture ordTex;
-    ordTex.loadSingle("res/texture/crafting_table_front.png");
+    ordTex.loadSingle("res/texture/crafting_table_front.png", GL_SRGB);
     //ordTex.loadSingle("res/texture/diamond_ore.png");
     shader.setTexture("ordTex", ordTex);
 
@@ -259,9 +259,12 @@ int main()
     glm::vec3 matSpecular(objectColor * 0.7f);
     float matShininess = 16.0f;
     Shader shadowShader("res/shader/shadow.shader");
+    Shader sphereShader("res/shader/sphere.shader");
 
     int useTexture = 0;
     int useNormalMap = 1;
+    int useReflMap = 1;
+    float reflStrength = 0.0f;
 
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
@@ -311,11 +314,10 @@ int main()
             for (int i = 0; i < objectCount; i++)
             {
                 model = glm::mat4(1.0f);
-                model = glm::rotate(glm::mat4(1.0f), glm::radians(-55.0f), glm::vec3(0.0f, 0.0f, 1.0f));
                 float scale = (float)i / 5 + 1;
                 model = glm::translate(model, cubePositions[i]);
                 model = glm::scale(model, glm::vec3(scale, scale, scale));
-                //model = glm::rotate(model, glm::radians(timeValue * 30.0f * i + 20.0f * i), glm::vec3(1.0f, 0.3f, 0.5f));
+                model = glm::rotate(model, glm::radians(timeValue * 30.0f * i + 20.0f * i), glm::vec3(1.0f, 0.3f, 0.5f));
                 shadowShader.setUniformMat4("model", model);
                 renderer.draw(va, shadowShader);
             }
@@ -327,9 +329,9 @@ int main()
         renderer.clear();
         ordTex.bind();
         normMap.bind();
-        light->attenuation.x = light->attenuation.y = 0;
+        /*light->attenuation.x = light->attenuation.y = 0;
         light2->attenuation.x = light2->attenuation.y = 0;
-        light3->attenuation.x = light3->attenuation.y = 0;
+        light3->attenuation.x = light3->attenuation.y = 0;*/
 
         shader.enable();
         shader.setUniformMat4("proj", proj);
@@ -340,6 +342,10 @@ int main()
         shader.setMaterial(matAmbient, matDiffuse, matSpecular, matShininess);
         shader.setUniform1i("useTexture", useTexture);
         shader.setUniform1i("useNormalMap", useNormalMap);
+        shader.setTexture("material.normalMap", normMap);
+        shader.setTexture("material.reflMap", skyTexture);
+        shader.setUniform1i("useReflMap", useReflMap);
+        shader.setUniform1f("material.reflStrength", reflStrength);
         for (int i = 0; i < pointLightCount; i++)
         {
             depthBufferTex[i].bind();
@@ -350,11 +356,10 @@ int main()
         for (int i = 0; i < objectCount; i++)
         {
             model = glm::mat4(1.0f);
-            model = glm::rotate(glm::mat4(1.0f), glm::radians(-55.0f), glm::vec3(0.0f, 0.0f, 1.0f));
             float scale = (float)i / 5 + 1;
             model = glm::translate(model, cubePositions[i]);
             model = glm::scale(model, glm::vec3(scale, scale, scale));
-            //model = glm::rotate(model, glm::radians(timeValue * 30.0f * i + 20.0f * i), glm::vec3(1.0f, 0.3f, 0.5f));
+            model = glm::rotate(model, glm::radians(timeValue * 30.0f * i + 20.0f * i), glm::vec3(1.0f, 0.3f, 0.5f));
             shader.useModelMatrix(model);
             renderer.draw(va, shader);
         }
@@ -380,6 +385,16 @@ int main()
             lightShader.setUniformVec3("lightColor", glm::length(lights[i]->color) * glm::normalize(lights[i]->color));
             renderer.draw(sphereVa, lightShader);
         }
+
+        glm::vec3 center(10.0f, 5.0f, 5.0f);
+        sphereShader.enable();
+        sphereShader.setTexture("tex", skyTexture);
+        sphereShader.setUniformMat4("model", glm::translate(glm::mat4(1.0f), center));
+        sphereShader.setUniformMat4("proj", proj);
+        sphereShader.setUniformMat4("view", camera.getViewMatrix());
+        sphereShader.setUniformVec3("center", center);
+        sphereShader.setUniformVec3("viewPos", camera.pos());
+        renderer.draw(sphereVa, sphereShader);
 
         skyboxShader.enable();
         skyboxShader.setTexture("sky", skyTexture);
@@ -418,6 +433,8 @@ int main()
                 ImGui::SliderFloat("Shininess", &matShininess, 2.0f, 48.0f);
                 ImGui::SliderInt("Texture on", &useTexture, 0, 1);
                 ImGui::SliderInt("NormalMap on", &useNormalMap, 0, 1);
+                ImGui::SliderInt("ReflMap on", &useReflMap, 0, 1);
+                ImGui::SliderFloat("ReflStrength", &reflStrength, 0.0f, 1.0f);
                 ImGui::SliderFloat("Gamma", &GAMMA, 1.0f, 4.0f);
                 ImGui::SliderFloat("Exposure", &EXPOSURE, 0.01f, 20.0f);
                 ImGui::Text("x: %.3f y: %.3f z: %.3f  FOV: %.1f", camera.pos().x, camera.pos().y, camera.pos().z, camera.FOV());

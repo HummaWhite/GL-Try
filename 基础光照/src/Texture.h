@@ -26,6 +26,7 @@ public:
 	void loadSingle(const std::string& filePath, GLuint internalType = GL_RGBA, GLuint filterType = GL_LINEAR);
 	void loadCube(const std::vector<std::string>& filePaths, GLuint internalType = GL_RGBA, GLuint filterType = GL_LINEAR);
 	void attachDepthBufferCube(const FrameBuffer& frameBuffer, int resolution);
+	void attachColorBufferCube(const FrameBuffer& frameBuffer, int resolution, GLuint colorFormat = GL_RGB);
 	void attachFrameBuffer2D(const FrameBuffer& frameBuffer, GLuint type, int width, int height);
 	void attachColorBuffer2D(const FrameBuffer& frameBuffer, int width, int height, GLuint colorFormat = GL_RGB);
 

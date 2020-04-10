@@ -122,6 +122,45 @@ void Texture::attachDepthBufferCube(const FrameBuffer& depthBuffer, int resoluti
 	slot = m_SlotsUsed++;
 }
 
+void Texture::attachColorBufferCube(const FrameBuffer& frameBuffer, int resolution, GLuint colorFormat)
+{
+	if (m_Loaded)
+	{
+		std::cout << "Error: texture already loaded for this object" << std::endl;
+		return;
+	}
+	m_TextureType = GL_TEXTURE_CUBE_MAP;
+	glBindTexture(m_TextureType, ID);
+
+	for (int i = 0; i < 6; i++)
+	{
+		glTexImage2D
+		(
+			GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, colorFormat,
+			resolution, resolution, 0, GL_RGB, GL_FLOAT, nullptr
+		);
+	}
+
+	glTexParameteri(m_TextureType, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glTexParameteri(m_TextureType, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(m_TextureType, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTexParameteri(m_TextureType, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	glTexParameteri(m_TextureType, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+
+	frameBuffer.bind();
+	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH32F_STENCIL8, resolution, resolution);
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, m_TextureType, ID, 0);
+	frameBuffer.attachRenderBuffer();
+	frameBuffer.unbind();
+
+	if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
+		std::cout << "Error: framebuffer not complete" << std::endl;
+
+	glBindTexture(m_TextureType, 0);
+	m_Loaded = true;
+	slot = m_SlotsUsed++;
+}
+
 void Texture::attachFrameBuffer2D(const FrameBuffer& frameBuffer, GLuint type, int width, int height)
 {
 	if (m_Loaded)
@@ -168,7 +207,7 @@ void Texture::attachColorBuffer2D(const FrameBuffer& frameBuffer, int width, int
 	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH32F_STENCIL8, width, height);
 	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, m_TextureType, ID, 0);
 	frameBuffer.attachRenderBuffer();
-	//frameBuffer.unbind();
+	frameBuffer.unbind();
 
 	if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
 		std::cout << "Error: framebuffer not complete" << std::endl;
