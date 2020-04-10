@@ -71,3 +71,28 @@
 阴影增加基于PCF的边缘软化，同时尝试了Gamma校正
 
 ![](https://github.com/HummaWhite/GL-Try/blob/master/%E7%BA%B9%E7%90%86/md-pics/OpenGL-Try%202020_3_29%2019_48_19.png)
+
+
+
+## 4.3
+
+颜色帧缓冲
+
+
+
+## 4.7
+
+把天空盒换成了HDR材质天空球，添加曝光校正
+
+
+
+## 4.10
+
+反射贴图，终于搞定了球面坐标到平面坐标的转换
+
+![](https://github.com/HummaWhite/GL-Try/blob/master/%E7%BA%B9%E7%90%86/md-pics/OpenGL-Try%202020_4_10%2017_29_19.png)
+
+这张图上面的纹理拼接有瑕疵，实际上问题已经解决了（其实是传错截图了）
+
+![](https://github.com/HummaWhite/GL-Try/blob/master/%E7%BA%B9%E7%90%86/md-pics/OpenGL-Try%202020_4_10%2023_11_07.png)
+
