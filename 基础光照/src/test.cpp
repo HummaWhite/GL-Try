@@ -158,19 +158,25 @@ int main()
     glDepthFunc(GL_LEQUAL);
     //glEnable(GL_FRAMEBUFFER_SRGB);
 
-    Shape cube;
-    cube.loadCube();
-    //cube.loadSquare();
-    //cube.loadSphere(6, 6, 1.0f);
-    //cube.loadCone(240, 1.0f, 2.0f);
-    //cube.loadTorus(120, 60, 0.5f, 0.2f);
+    std::vector<glm::vec3> bezierPoints =
+    {
+        { -2.0f, -2.0f, -1.0f }, { -0.15f, -2.1f, 0.0f }, { 1.5f, -2.4f, -1.2f },
+        { -3.0f, -0.25f, 1.0f }, {  0.15f, -0.1f, 0.3f }, { 1.5f, -0.4f, 1.2f },
+        { -2.5f, 1.75f, -1.4f }, { -0.05f,  1.9f, 0.15f }, { 1.5f, 2.4f, 1.2f }
+    };
+
+    Bezier cube(2, 2, 40, 40, bezierPoints);
+    //Cube cube;
+    //Square cube;
+    //Sphere cube(60, 30, 1.0f);
+    //Cone cube(240, 1.0f, 2.0f);
+    //Torus cube(120, 60, 0.5f, 0.2f);
     cube.addTangents();
     VertexBuffer vb(cube);
     VertexArray va;
     va.addBuffer(vb, cube.layout());
     Shader shader("res/shader/normalMap.shader");
-    Shape square;
-    square.loadSquare();
+    Square square;
     square.addTangents();
     VertexBuffer sqVb(square);
     VertexArray sqVa;
@@ -181,9 +187,9 @@ int main()
     Shader lightShader("res/shader/light.shader");
     LightGroup lights;
     const int pointLightCount = 3;
-    Light* light = new Light(Light::POINT, glm::vec3(0, 0, 4.0f), glm::vec3(1.0f, 1.0f, 1.0f), 8);
-    Light* light2 = new Light(Light::POINT, glm::vec3(6.0f, -6.0f, 0), glm::vec3(1.0f, 0.0f, 1.0f), 8);
-    Light* light3 = new Light(Light::POINT, glm::vec3(-4.0, -2.0f, -1.0f), glm::vec3(0.2f, 0.5f, 0.9f), 8);
+    Light* light = new Light(Light::POINT, { 0.0f, 0.0f, 4.0f }, { 1.0f, 1.0f, 1.0f }, 8);
+    Light* light2 = new Light(Light::POINT, { 6.0f, -6.0f, 0.0f }, { 1.0f, 0.0f, 1.0f }, 8);
+    Light* light3 = new Light(Light::POINT, { -4.0, -2.0f, -1.0f }, { 0.2f, 0.5f, 0.9f }, 8);
     int light0AttenLevel = 8;
     lights.push_back(light);
     lights.push_back(light2);
@@ -191,8 +197,7 @@ int main()
     lights.push_back(spotLight);
 
     int columns = 40, rows = 20;
-    Shape sphere;
-    sphere.loadSphere(columns, rows, 1.0f);
+    Sphere sphere(columns, rows, 1.0f);
     VertexBuffer sphereVb(sphere);
     VertexArray sphereVa;
     sphereVa.addBuffer(sphereVb, sphere.layout());
@@ -202,7 +207,7 @@ int main()
     Shader skyboxShader("res/shader/skyboxSphere.shader");
     skyTexture.bind();
     skyboxShader.setTexture("sky", skyTexture);
-    glm::mat4 skyboxModel = glm::rotate(glm::mat4(1.0f), glm::radians(90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+    glm::mat4 skyboxModel = glm::rotate(glm::mat4(1.0f), glm::radians(90.0f), { 1.0f, 0.0f, 0.0f });
 
     FrameBuffer depthBuffer[pointLightCount];
     Texture depthBufferTex[pointLightCount];
@@ -234,25 +239,25 @@ int main()
 
     glm::mat4 model(1.0f);
     glm::mat4 view(1.0f);
-    view = glm::translate(view, glm::vec3(0.0f, -3.0f, 0.0f));
+    view = glm::translate(view, { 0.0f, -3.0f, 0.0f });
     glm::mat4 proj;
 
     glm::vec3 cubePositions[] =
     {
-        glm::vec3(-2.0f,  1.0f,  2.5f),
-        glm::vec3(2.0f,  10.0f, 0.0f),
-        glm::vec3(-1.5f, -2.2f, -2.5f),
-        glm::vec3(-3.8f, 4.0f, -2.3f),
-        glm::vec3(2.4f, -0.4f, -3.5f),
-        glm::vec3(-1.7f,  3.0f, 7.5f),
-        glm::vec3(1.3f, -2.0f, 2.5f),
-        glm::vec3(1.5f,  2.0f, 1.5f),
-        glm::vec3(1.5f,  0.2f, 6.5f),
-        glm::vec3(-1.3f,  1.0f, -1.5f)
+        { -2.0f,  1.0f,  2.5f },
+        { 2.0f,  10.0f, 0.0f },
+        { -1.5f, -2.2f, -2.5f },
+        { -3.8f, 4.0f, -2.3f },
+        { 2.4f, -0.4f, -3.5f },
+        { -1.7f,  3.0f, 7.5f },
+        { 1.3f, -2.0f, 2.5f },
+        { 1.5f,  2.0f, 1.5f },
+        { 1.5f,  0.2f, 6.5f },
+        { -1.3f,  1.0f, -1.5f }
     };
 
     int objectCount = 4;
-    glm::vec3 objectColor = glm::vec3(0.4f, 0.5f, 0.7f);
+    glm::vec3 objectColor(0.4f, 0.5f, 0.7f);
     objectColor = glm::vec3(1.0f, 1.0f, 1.0f) * 1.0f;
     glm::vec3 matAmbient(objectColor * 0.035f);
     glm::vec3 matDiffuse(objectColor * 0.7f);

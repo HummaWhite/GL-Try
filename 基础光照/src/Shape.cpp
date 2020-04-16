@@ -9,8 +9,22 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
-Shape::Shape() :
-	m_Buffer(nullptr), m_Type(0), m_WithTangents(false)
+float C[5][5] =
+{
+	{ 1, 0, 0, 0, 0 },
+	{ 1, 1, 0, 0, 0 },
+	{ 1, 2, 1, 0, 0 },
+	{ 1, 3, 3, 1, 0 },
+	{ 1, 4, 6, 4, 1 }
+};
+
+float B(int n, int i, float u)
+{
+	return C[n][i] * pow(u, i) * pow(1 - u, n - i);
+}
+
+Shape::Shape(int vertexCount, int type):
+	m_VertexCount(vertexCount), m_Type(type), m_WithTangents(false)
 {
 	m_Layout.add<GL_FLOAT>(3);
 	m_Layout.add<GL_FLOAT>(2);
@@ -78,42 +92,33 @@ void Shape::addTangents()
 	m_Layout.add<GL_FLOAT>(3);
 }
 
-void Shape::loadCube()
+void Shape::setBuffer(float* buffer)
 {
-	if (m_Type)
-	{
-		std::cout << "Already loaded" << std::endl;
-		return;
-	}
-	m_Buffer = new float[288];
-	memcpy(m_Buffer, CUBE_VERTICES, 288 * sizeof(float));
-	m_VertexCount = 36;
-	m_Type = CUBE;
+	m_Buffer = buffer;
 }
 
-void Shape::loadSquare()
+Cube::Cube() :
+	Shape(36, CUBE)
 {
-	if (m_Type)
-	{
-		std::cout << "Already loaded" << std::endl;
-		return;
-	}
-	m_Buffer = new float[48];
-	memcpy(m_Buffer, SQUARE_VERTICES, 48 * sizeof(float));
-	m_VertexCount = 6;
-	m_Type = SQUARE;
+	float* buffer = new float[288];
+	memcpy(buffer, CUBE_VERTICES, 288 * sizeof(float));
+	setBuffer(buffer);
 }
 
-void Shape::loadCone(int faces, float radius, float height)
+Square::Square() :
+	Shape(6, SQUARE)
 {
-	if (m_Type)
-	{
-		std::cout << "Already loaded" << std::endl;
-		return;
-	}
+	float* buffer = new float[48];
+	memcpy(buffer, SQUARE_VERTICES, 48 * sizeof(float));
+	setBuffer(buffer);
+}
+
+Cone::Cone(int faces, float radius, float height) :
+	Shape(faces * 3, CONE)
+{
 	std::queue<float> Q;
-	m_VertexCount = faces * 3;
-	m_Buffer = new float[m_VertexCount * 8];
+	int vertexCount = faces * 3;
+	float* buffer = new float[vertexCount * 8];
 	float alpha = glm::radians(360.0f / (float)faces);
 	for (int i = 0; i < faces; i++)
 	{
@@ -128,23 +133,19 @@ void Shape::loadCone(int faces, float radius, float height)
 		Q.push(x2), Q.push(y2), Q.push(0), Q.push(sqx2), Q.push(1.0), Q.push(norm.x), Q.push(norm.y), Q.push(norm.z);
 		Q.push(0), Q.push(0), Q.push(height), Q.push(sqx1), Q.push(0.0), Q.push(norm.x), Q.push(norm.y), Q.push(norm.z);
 	}
-	for (int i = 0; i < m_VertexCount * 8; i++)
+	for (int i = 0; i < vertexCount * 8; i++)
 	{
-		m_Buffer[i] = Q.front();
+		buffer[i] = Q.front();
 		Q.pop();
 	}
-	m_Type = CONE;
+	setBuffer(buffer);
 }
 
-void Shape::loadSphere(int columns, int rows, float radius, float Atheta, float Arho)
+Sphere::Sphere(int columns, int rows, float radius, float Atheta, float Arho) :
+	Shape(rows * columns * 6, SPHERE)
 {
-	if (m_Type)
-	{
-		std::cout << "Already loaded" << std::endl;
-		return;
-	}
-	m_VertexCount = rows * columns * 6;
-	m_Buffer = new float[m_VertexCount * 8];
+	int vertexCount = rows * columns * 6;
+	float* buffer = new float[vertexCount * 8];
 	float theta = glm::radians(Atheta / (float)columns);
 	float rho = glm::radians(Arho / (float)rows);
 	std::queue<float> Q;
@@ -181,23 +182,19 @@ void Shape::loadSphere(int columns, int rows, float radius, float Atheta, float 
 			Q.push(x2), Q.push(y2), Q.push(z1), Q.push(sqx2), Q.push(sqy1), Q.push(norm.x), Q.push(norm.y), Q.push(norm.z);
 		}
 	}
-	for (int i = 0; i < m_VertexCount * 8; i++)
+	for (int i = 0; i < vertexCount * 8; i++)
 	{
-		m_Buffer[i] = Q.front();
+		buffer[i] = Q.front();
 		Q.pop();
 	}
-	m_Type = SPHERE;
+	setBuffer(buffer);
 }
 
-void Shape::loadTorus(int columns, int rows, float majorRadius, float minorRadius, float Atheta, float Btheta)
+Torus::Torus(int columns, int rows, float majorRadius, float minorRadius, float Atheta, float Btheta) :
+	Shape(columns* rows * 6, TORUS)
 {
-	if (m_Type)
-	{
-		std::cout << "Already loaded" << std::endl;
-		return;
-	}
-	m_VertexCount = columns * rows * 6;
-	m_Buffer = new float[m_VertexCount * 8];
+	int vertexCount = columns * rows * 6;
+	float* buffer = new float[vertexCount * 8];
 	float dAtheta = glm::radians(Atheta / (float)columns);
 	float dBtheta = glm::radians(Btheta / (float)rows);
 	std::queue<float> Q;
@@ -230,10 +227,62 @@ void Shape::loadTorus(int columns, int rows, float majorRadius, float minorRadiu
 			Q.push(x2), Q.push(y2), Q.push(z1), Q.push(sqx2), Q.push(sqy1), Q.push(norm.x), Q.push(norm.y), Q.push(norm.z);
 		}
 	}
-	for (int i = 0; i < m_VertexCount * 8; i++)
+	for (int i = 0; i < vertexCount * 8; i++)
 	{
-		m_Buffer[i] = Q.front();
+		buffer[i] = Q.front();
 		Q.pop();
 	}
-	m_Type = TORUS;
+	setBuffer(buffer);
+}
+
+Bezier::Bezier(int _n, int _m, int _secU, int _secV, const std::vector<glm::vec3>& points) :
+	Shape(_secU * _secV * 6, BEZIER), n(_n), m(_m), secU(_secU), secV(_secV)
+{
+	if ((n + 1) * (m + 1) != points.size())
+	{
+		std::cout << "Bezier: vector size not equal to n * m" << std::endl;
+		return;
+	}
+	int vertexCount = secU * secV * 6;
+	float* buffer = new float[vertexCount * 8];
+	std::queue<float> Q;
+
+	float du = 1.0 / (float)secU;
+	float dv = 1.0 / (float)secV;
+
+	for (int i = 0; i < secU; i++)
+	{
+		for (int j = 0; j < secV; j++)
+		{
+			float u = i * du, v = j * dv;
+			float up = (i + 1) * du, vp = (j + 1) * dv;
+			glm::vec3 P1(0.0), P2(0.0), P3(0.0), P4(0.0);
+			for (int s = 0; s <= n; s++)
+			{
+				for (int t = 0; t <= m; t++)
+				{
+					glm::vec3 Pst = points[s * (m + 1) + t];
+					P1 += B(n, s, u)  * B(m, t, v)  * Pst;
+					P2 += B(n, s, up) * B(m, t, v)  * Pst;
+					P3 += B(n, s, up) * B(m, t, vp) * Pst;
+					P4 += B(n, s, u)  * B(m, t, vp) * Pst;
+					//std::cout << P1.x << " " << P1.y << " " << P1.z << std::endl;
+				}
+			}
+			glm::vec3 norm123 = glm::normalize(glm::cross(P2 - P1, P3 - P1));
+			glm::vec3 norm134 = glm::normalize(glm::cross(P3 - P1, P4 - P1));
+			Q.push(P1.x), Q.push(P1.y), Q.push(P1.z), Q.push(u),  Q.push(v),  Q.push(norm123.x), Q.push(norm123.y), Q.push(norm123.z);
+			Q.push(P2.x), Q.push(P2.y), Q.push(P2.z), Q.push(up), Q.push(v),  Q.push(norm123.x), Q.push(norm123.y), Q.push(norm123.z);
+			Q.push(P3.x), Q.push(P3.y), Q.push(P3.z), Q.push(up), Q.push(vp), Q.push(norm123.x), Q.push(norm123.y), Q.push(norm123.z);
+			Q.push(P1.x), Q.push(P1.y), Q.push(P1.z), Q.push(u),  Q.push(v),  Q.push(norm134.x), Q.push(norm134.y), Q.push(norm134.z);
+			Q.push(P3.x), Q.push(P3.y), Q.push(P3.z), Q.push(up), Q.push(vp), Q.push(norm134.x), Q.push(norm134.y), Q.push(norm134.z);
+			Q.push(P4.x), Q.push(P4.y), Q.push(P4.z), Q.push(u),  Q.push(vp), Q.push(norm134.x), Q.push(norm134.y), Q.push(norm134.z);
+		}
+	}
+	for (int i = 0; i < vertexCount * 8; i++)
+	{
+		buffer[i] = Q.front();
+		Q.pop();
+	}
+	setBuffer(buffer);
 }

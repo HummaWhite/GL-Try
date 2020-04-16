@@ -29,13 +29,18 @@ uniform sampler2D tex;
 
 const float Pi = 3.1415926535897;
 
+vec2 sphereTo2D(vec3 sph)
+{
+	float theta = atan(sph.y, sph.x);
+	if (theta < 0.0) theta += Pi * 2;
+	float phi = atan(length(sph.xy), sph.z);
+	return vec2(theta / Pi / 2.0, phi / Pi);
+}
+
 void main()
 {
 	vec3 norm = normalize(fragPos - center);
 	vec3 ref = reflect(-normalize(viewPos - fragPos), norm);
-	float theta = atan(ref.y, ref.x);
-	if (theta < 0.0) theta += Pi * 2;
-	float phi = atan(length(ref.xy), ref.z);
-	vec2 coord = vec2(theta / Pi / 2.0, phi / Pi);
+	vec2 coord = sphereTo2D(ref);
 	fragColor = texture(tex, coord);
 }
