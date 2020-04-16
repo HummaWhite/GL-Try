@@ -96,3 +96,11 @@
 
 ![](https://github.com/HummaWhite/GL-Try/blob/master/%E7%BA%B9%E7%90%86/md-pics/OpenGL-Try%202020_4_10%2023_11_07.png)
 
+
+
+## 4.16
+
+改了改形状生成器，然后实现了Bezier曲面。目前的问题就是控制点比较多不好控制。下一步可以直接在Shader里面计算曲面上每一个点的精确法向量从而实现光滑的反射贴图（然而多项式求导有点繁琐）
+
+![](https://github.com/HummaWhite/GL-Try/blob/master/%E7%BA%B9%E7%90%86/md-pics/OpenGL-Try%202020_4_16%2020_48_47.png)
+
