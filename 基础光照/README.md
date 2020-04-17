@@ -104,3 +104,8 @@
 
 ![](https://github.com/HummaWhite/GL-Try/blob/master/%E7%BA%B9%E7%90%86/md-pics/OpenGL-Try%202020_4_16%2020_48_47.png)
 
+
+
+## 4.17
+
+光滑的Bezier曲面

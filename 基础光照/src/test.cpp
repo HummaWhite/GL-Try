@@ -160,13 +160,18 @@ int main()
 
     std::vector<glm::vec3> bezierPoints =
     {
-        { -2.0f, -2.0f, -1.0f }, { -0.15f, -2.1f, 0.0f }, { 1.5f, -2.4f, -1.2f },
+        { -2.0f, -2.0f,  1.0f }, { -0.15f, -2.1f, 0.0f }, { 1.5f, -2.4f, -2.2f },
         { -3.0f, -0.25f, 1.0f }, {  0.15f, -0.1f, 0.3f }, { 1.5f, -0.4f, 1.2f },
-        { -2.5f, 1.75f, -1.4f }, { -0.05f,  1.9f, 0.15f }, { 1.5f, 2.4f, 1.2f }
+        { -2.5f, 1.75f, -2.4f }, { -0.05f,  1.9f, -1.5f }, { 1.5f, 2.4f, 1.2f }
     };
 
-    Bezier cube(2, 2, 40, 40, bezierPoints);
-    //Cube cube;
+    Bezier bezier(2, 2, 40, 40, bezierPoints);
+    bezier.addTangents();
+    VertexBuffer bezierVb(bezier);
+    VertexArray bezierVa;
+    bezierVa.addBuffer(bezierVb, bezier.layout());
+    Shader bezierShader("res/shader/bezier.shader");
+    Cube cube;
     //Square cube;
     //Sphere cube(60, 30, 1.0f);
     //Cone cube(240, 1.0f, 2.0f);
@@ -280,7 +285,6 @@ int main()
 
     while (!glfwWindowShouldClose(window))
     {
-        //fpsTimer.work();
         processInput(window);
         renderer.clear(0.0f, 0.0f, 0.0f);
         
@@ -400,6 +404,19 @@ int main()
         sphereShader.setUniformVec3("center", center);
         sphereShader.setUniformVec3("viewPos", camera.pos());
         renderer.draw(sphereVa, sphereShader);
+
+        model = glm::translate(glm::mat4(1.0f), { 0.0f, 10.0f, 4.0f });
+        bezierShader.enable();
+        bezierShader.setTexture("tex", skyTexture);
+        bezierShader.setUniformMat4("model", model);
+        bezierShader.setUniformMat4("proj", proj);
+        bezierShader.setUniformMat4("view", camera.getViewMatrix());
+        bezierShader.setUniformVec3("viewPos", camera.pos());
+        bezierShader.setUniform1i("N", bezier.n);
+        bezierShader.setUniform1i("M", bezier.m);
+        for (int i = 0; i < (bezier.n + 1) * (bezier.m + 1); i++)
+            bezierShader.setUniformVec3(("points[" + std::to_string(i) + "]").c_str(), bezierPoints[i]);
+        renderer.draw(bezierVa, bezierShader);
 
         skyboxShader.enable();
         skyboxShader.setTexture("sky", skyTexture);

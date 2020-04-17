@@ -9,7 +9,7 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
-float C[5][5] =
+const float C[5][5] =
 {
 	{ 1, 0, 0, 0, 0 },
 	{ 1, 1, 0, 0, 0 },
@@ -21,6 +21,12 @@ float C[5][5] =
 float B(int n, int i, float u)
 {
 	return C[n][i] * pow(u, i) * pow(1 - u, n - i);
+}
+
+float dB(int n, int i, float u)
+{
+	return C[n][i] * (i == 0 ? 0 : i * pow(u, i - 1) * pow(1 - u, n - i))
+		+ C[n][i] * (i == n ? 0 : (n - i) * pow(u, i) * pow(1 - u, n - i - 1));
 }
 
 Shape::Shape(int vertexCount, int type):
@@ -240,7 +246,7 @@ Bezier::Bezier(int _n, int _m, int _secU, int _secV, const std::vector<glm::vec3
 {
 	if ((n + 1) * (m + 1) != points.size())
 	{
-		std::cout << "Bezier: vector size not equal to n * m" << std::endl;
+		std::cout << "Error: Bezier generator::vector size not equal to (n + 1) * (m + 1)" << std::endl;
 		return;
 	}
 	int vertexCount = secU * secV * 6;
@@ -266,7 +272,6 @@ Bezier::Bezier(int _n, int _m, int _secU, int _secV, const std::vector<glm::vec3
 					P2 += B(n, s, up) * B(m, t, v)  * Pst;
 					P3 += B(n, s, up) * B(m, t, vp) * Pst;
 					P4 += B(n, s, u)  * B(m, t, vp) * Pst;
-					//std::cout << P1.x << " " << P1.y << " " << P1.z << std::endl;
 				}
 			}
 			glm::vec3 norm123 = glm::normalize(glm::cross(P2 - P1, P3 - P1));
