@@ -62,7 +62,7 @@
 
 添加了ImGui，调参数方便了许多
 
-![](https://github.com/HummaWhite/GL-Try/blob/master/%E7%BA%B9%E7%90%86/md-pics/OpenGL-Try%202020_3_18%2019_44_36.png)
+![](https://raw.staticdn.net/HummaWhite/GL-Try/master/纹理/md-pics/OpenGL-Try%202020_3_18%2019_44_36.png)
 
 
 
@@ -70,7 +70,7 @@
 
 阴影增加基于PCF的边缘软化，同时尝试了Gamma校正
 
-![](https://github.com/HummaWhite/GL-Try/blob/master/%E7%BA%B9%E7%90%86/md-pics/OpenGL-Try%202020_3_29%2019_48_19.png)
+![](https://raw.staticdn.net/HummaWhite/GL-Try/master/纹理/md-pics/OpenGL-Try%202020_3_29%2019_48_19.png)
 
 
 
@@ -90,11 +90,11 @@
 
 反射贴图，终于搞定了球面坐标到平面坐标的转换
 
-![](https://github.com/HummaWhite/GL-Try/blob/master/%E7%BA%B9%E7%90%86/md-pics/OpenGL-Try%202020_4_10%2017_29_19.png)
+![](https://raw.staticdn.net/HummaWhite/GL-Try/master/纹理/md-pics/OpenGL-Try%202020_4_10%2023_11_07.png)
 
 这张图上面的纹理拼接有瑕疵，实际上问题已经解决了（其实是传错截图了）
 
-![](https://github.com/HummaWhite/GL-Try/blob/master/%E7%BA%B9%E7%90%86/md-pics/OpenGL-Try%202020_4_10%2023_11_07.png)
+![](https://raw.staticdn.net/HummaWhite/GL-Try/master/纹理/md-pics/OpenGL-Try%202020_4_10%2017_29_19.png)
 
 
 
@@ -102,10 +102,20 @@
 
 改了改形状生成器，然后实现了Bezier曲面。目前的问题就是控制点比较多不好控制。下一步可以直接在Shader里面计算曲面上每一个点的精确法向量从而实现光滑的反射贴图（然而多项式求导有点繁琐）
 
-![](https://github.com/HummaWhite/GL-Try/blob/master/%E7%BA%B9%E7%90%86/md-pics/OpenGL-Try%202020_4_16%2020_48_47.png)
+![](https://raw.staticdn.net/HummaWhite/GL-Try/master/纹理/md-pics/OpenGL-Try%202020_4_16%2020_48_47.png)
 
 
 
 ## 4.17
 
 光滑的Bezier曲面
+
+
+
+## 4.18
+
+重写了形状生成器，现在可以加载bpt文件（贝塞尔曲线构成的模型）。
+
+**犹他壶**纪念
+
+![](https://raw.staticdn.net/HummaWhite/GL-Try/master/纹理/md-pics/OpenGL-Try%202020_4_18%2020_39_07.png)
