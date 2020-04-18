@@ -50,7 +50,8 @@ float B(int n, int i, float u)
 
 float dB(int n, int i, float u)
 {
-	return C[n][i] * (i * pow(u, i - 1) * pow(1 - u, n - i) - (n - i) * pow(u, i) * pow(1 - u, n - i - 1));
+	return C[n][i] * (i == 0 ? 0 : i * pow(u, i - 1) * pow(1 - u, n - i))
+		- C[n][i] * (i == n ? 0 : (n - i) * pow(u, i) * pow(1 - u, n - i - 1));
 }
 
 vec2 sphereTo2D(vec3 sph)

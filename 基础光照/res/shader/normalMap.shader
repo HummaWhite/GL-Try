@@ -63,6 +63,7 @@ struct Material
     float shininess;
     sampler2D normalMap;
     sampler2D reflMap;
+    sampler2D specMap;
     float reflStrength;
 };
 
@@ -215,6 +216,7 @@ void main()
         result += calcSpotLight(i, newNorm, fragPos, fragToView);
     result *= useTexture ? texture(ordTex, fs_in.texCoord).rgb : vec3(1.0f);
     vec3 reflColor = texture(material.reflMap, sphereCoord(newNorm)).rgb;
-    result = useReflMap ? material.reflStrength * reflColor + (1.0 - material.reflStrength) * result : result;
+    float reflStrength = material.reflStrength;
+    result = useReflMap ? reflStrength * reflColor + (1.0 - reflStrength) * result : result;
     fragColor = vec4(result, 1.0);
 }

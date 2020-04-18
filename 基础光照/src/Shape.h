@@ -30,6 +30,11 @@ public:
 		BEZIER,
 		SPECIAL
 	};
+	enum
+	{
+		FACE = 0,
+		VERTEX
+	} NormalType;
 private:
 	float* m_Buffer;
 	int m_Type;
@@ -63,21 +68,21 @@ class Sphere :
 	public Shape
 {
 public:
-	Sphere(int columns, int rows, float radius, float Atheta = 360.0f, float Arho = 180.0f);
+	Sphere(int columns, int rows, float radius, int normalType, float Atheta = 360.0f, float Arho = 180.0f);
 };
 
 class Torus :
 	public Shape
 {
 public:
-	Torus(int columns, int rows, float majorRadius, float minorRadius, float Atheta = 360.0f, float Btheta = 360.0f);
+	Torus(int columns, int rows, float majorRadius, float minorRadius, int normalType, float Atheta = 360.0f, float Btheta = 360.0f);
 };
 
 class Bezier :
 	public Shape
 {
 public:
-	Bezier(int _n, int _m, int _secU, int _secV, const std::vector<glm::vec3>& points);
+	Bezier(int _n, int _m, int _secU, int _secV, const std::vector<glm::vec3>& points, int normalType);
 	int n, m, secU, secV;
 };
 

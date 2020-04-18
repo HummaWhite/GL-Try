@@ -9,26 +9,6 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
-const float C[5][5] =
-{
-	{ 1, 0, 0, 0, 0 },
-	{ 1, 1, 0, 0, 0 },
-	{ 1, 2, 1, 0, 0 },
-	{ 1, 3, 3, 1, 0 },
-	{ 1, 4, 6, 4, 1 }
-};
-
-float B(int n, int i, float u)
-{
-	return C[n][i] * pow(u, i) * pow(1 - u, n - i);
-}
-
-float dB(int n, int i, float u)
-{
-	return C[n][i] * (i == 0 ? 0 : i * pow(u, i - 1) * pow(1 - u, n - i))
-		+ C[n][i] * (i == n ? 0 : (n - i) * pow(u, i) * pow(1 - u, n - i - 1));
-}
-
 Shape::Shape(int vertexCount, int type):
 	m_VertexCount(vertexCount), m_Type(type), m_WithTangents(false)
 {
@@ -147,7 +127,7 @@ Cone::Cone(int faces, float radius, float height) :
 	setBuffer(buffer);
 }
 
-Sphere::Sphere(int columns, int rows, float radius, float Atheta, float Arho) :
+Sphere::Sphere(int columns, int rows, float radius, int normalType, float Atheta, float Arho) :
 	Shape(rows * columns * 6, SPHERE)
 {
 	int vertexCount = rows * columns * 6;
@@ -172,20 +152,32 @@ Sphere::Sphere(int columns, int rows, float radius, float Atheta, float Arho) :
 			glm::vec3 va(x3 - x2, y3 - y2, z2 - z1);
 			glm::vec3 vb(x4 - x1, y4 - y1, z2 - z1);
 			glm::vec3 norm = glm::normalize(glm::cross(va, vb));
-			//glm::vec3 norm1 = glm::normalize(glm::vec3(x1, y1, z1));
-			//glm::vec3 norm2 = glm::normalize(glm::vec3(x2, y2, z1));
-			//glm::vec3 norm3 = glm::normalize(glm::vec3(x3, y3, z2));
-			//glm::vec3 norm4 = glm::normalize(glm::vec3(x4, y4, z2));
+			glm::vec3 norm1 = glm::normalize(glm::vec3(x1, y1, z1));
+			glm::vec3 norm2 = glm::normalize(glm::vec3(x2, y2, z1));
+			glm::vec3 norm3 = glm::normalize(glm::vec3(x3, y3, z2));
+			glm::vec3 norm4 = glm::normalize(glm::vec3(x4, y4, z2));
 			float sqx1 = 1.0f / columns * i;
 			float sqx2 = 1.0f / columns * (i + 1);
 			float sqy1 = 1.0f / rows * j;
 			float sqy2 = 1.0f / rows * (j + 1);
-			Q.push(x1), Q.push(y1), Q.push(z1), Q.push(sqx1), Q.push(sqy1), Q.push(norm.x), Q.push(norm.y), Q.push(norm.z);
-			Q.push(x2), Q.push(y2), Q.push(z1), Q.push(sqx2), Q.push(sqy1), Q.push(norm.x), Q.push(norm.y), Q.push(norm.z);
-			Q.push(x3), Q.push(y3), Q.push(z2), Q.push(sqx1), Q.push(sqy2), Q.push(norm.x), Q.push(norm.y), Q.push(norm.z);
-			Q.push(x4), Q.push(y4), Q.push(z2), Q.push(sqx2), Q.push(sqy2), Q.push(norm.x), Q.push(norm.y), Q.push(norm.z);
-			Q.push(x3), Q.push(y3), Q.push(z2), Q.push(sqx1), Q.push(sqy2), Q.push(norm.x), Q.push(norm.y), Q.push(norm.z);
-			Q.push(x2), Q.push(y2), Q.push(z1), Q.push(sqx2), Q.push(sqy1), Q.push(norm.x), Q.push(norm.y), Q.push(norm.z);
+			Q.push(x1), Q.push(y1), Q.push(z1), Q.push(sqx1), Q.push(sqy1);
+			if (normalType == FACE) Q.push(norm.x), Q.push(norm.y), Q.push(norm.z);
+			else						Q.push(norm1.x), Q.push(norm1.y), Q.push(norm1.z);
+			Q.push(x2), Q.push(y2), Q.push(z1), Q.push(sqx2), Q.push(sqy1);
+			if (normalType == FACE) Q.push(norm.x), Q.push(norm.y), Q.push(norm.z);
+			else						Q.push(norm2.x), Q.push(norm2.y), Q.push(norm2.z);
+			Q.push(x3), Q.push(y3), Q.push(z2), Q.push(sqx1), Q.push(sqy2);
+			if (normalType == FACE) Q.push(norm.x), Q.push(norm.y), Q.push(norm.z);
+			else						Q.push(norm3.x), Q.push(norm3.y), Q.push(norm3.z);
+			Q.push(x4), Q.push(y4), Q.push(z2), Q.push(sqx2), Q.push(sqy2);
+			if (normalType == FACE) Q.push(norm.x), Q.push(norm.y), Q.push(norm.z);
+			else						Q.push(norm4.x), Q.push(norm4.y), Q.push(norm4.z);
+			Q.push(x3), Q.push(y3), Q.push(z2), Q.push(sqx1), Q.push(sqy2);
+			if (normalType == FACE) Q.push(norm.x), Q.push(norm.y), Q.push(norm.z);
+			else						Q.push(norm3.x), Q.push(norm3.y), Q.push(norm3.z);
+			Q.push(x2), Q.push(y2), Q.push(z1), Q.push(sqx2), Q.push(sqy1);
+			if (normalType == FACE) Q.push(norm.x), Q.push(norm.y), Q.push(norm.z);
+			else						Q.push(norm2.x), Q.push(norm2.y), Q.push(norm2.z);
 		}
 	}
 	for (int i = 0; i < vertexCount * 8; i++)
@@ -196,7 +188,7 @@ Sphere::Sphere(int columns, int rows, float radius, float Atheta, float Arho) :
 	setBuffer(buffer);
 }
 
-Torus::Torus(int columns, int rows, float majorRadius, float minorRadius, float Atheta, float Btheta) :
+Torus::Torus(int columns, int rows, float majorRadius, float minorRadius, int normalType, float Atheta, float Btheta) :
 	Shape(columns* rows * 6, TORUS)
 {
 	int vertexCount = columns * rows * 6;
@@ -208,29 +200,47 @@ Torus::Torus(int columns, int rows, float majorRadius, float minorRadius, float 
 	{
 		for (int j = 0; j < rows; j++)
 		{
-			float z1 = minorRadius * sin(j * dBtheta);
-			float z2 = minorRadius * sin((j + 1) * dBtheta);
-			float x1 = (majorRadius - minorRadius * cos(j * dBtheta)) * cos(i * dAtheta);
-			float x2 = (majorRadius - minorRadius * cos(j * dBtheta)) * cos((i + 1) * dAtheta);
-			float x3 = (majorRadius - minorRadius * cos((j + 1) * dBtheta)) * cos(i * dAtheta);
-			float x4 = (majorRadius - minorRadius * cos((j + 1) * dBtheta)) * cos((i + 1) * dAtheta);
-			float y1 = (majorRadius - minorRadius * cos(j * dBtheta)) * sin(i * dAtheta);
-			float y2 = (majorRadius - minorRadius * cos(j * dBtheta)) * sin((i + 1) * dAtheta);
-			float y3 = (majorRadius - minorRadius * cos((j + 1) * dBtheta)) * sin(i * dAtheta);
-			float y4 = (majorRadius - minorRadius * cos((j + 1) * dBtheta)) * sin((i + 1) * dAtheta);
+			float at = i * dAtheta, atp = (i + 1) * dAtheta;
+			float bt = j * dBtheta, btp = (j + 1) * dBtheta;
+			float z1 = minorRadius * sin(bt);
+			float z2 = minorRadius * sin(btp);
+			float x1 = (majorRadius - minorRadius * cos(bt)) * cos(at);
+			float x2 = (majorRadius - minorRadius * cos(bt)) * cos(atp);
+			float x3 = (majorRadius - minorRadius * cos(btp)) * cos(at);
+			float x4 = (majorRadius - minorRadius * cos(btp)) * cos(atp);
+			float y1 = (majorRadius - minorRadius * cos(bt)) * sin(at);
+			float y2 = (majorRadius - minorRadius * cos(bt)) * sin(atp);
+			float y3 = (majorRadius - minorRadius * cos(btp)) * sin(at);
+			float y4 = (majorRadius - minorRadius * cos(btp)) * sin(atp);
 			glm::vec3 va(x3 - x2, y3 - y2, z2 - z1);
 			glm::vec3 vb(x4 - x1, y4 - y1, z2 - z1);
 			glm::vec3 norm = glm::normalize(glm::cross(va, vb));
+			glm::vec3 N1(x1 - majorRadius * cos(at), y1 - majorRadius * sin(at), z1);
+			glm::vec3 N2(x2 - majorRadius * cos(atp), y2 - majorRadius * sin(atp), z1);
+			glm::vec3 N3(x3 - majorRadius * cos(at), y3 - majorRadius * sin(at), z2);
+			glm::vec3 N4(x4 - majorRadius * cos(atp), y4 - majorRadius * sin(atp), z2);
 			float sqx1 = 1.0f / columns * i;
 			float sqx2 = 1.0f / columns * (i + 1);
 			float sqy1 = 1.0f / rows * j;
 			float sqy2 = 1.0f / rows * (j + 1);
-			Q.push(x1), Q.push(y1), Q.push(z1), Q.push(sqx1), Q.push(sqy1), Q.push(norm.x), Q.push(norm.y), Q.push(norm.z);
-			Q.push(x2), Q.push(y2), Q.push(z1), Q.push(sqx2), Q.push(sqy1), Q.push(norm.x), Q.push(norm.y), Q.push(norm.z);
-			Q.push(x3), Q.push(y3), Q.push(z2), Q.push(sqx1), Q.push(sqy2), Q.push(norm.x), Q.push(norm.y), Q.push(norm.z);
-			Q.push(x4), Q.push(y4), Q.push(z2), Q.push(sqx2), Q.push(sqy2), Q.push(norm.x), Q.push(norm.y), Q.push(norm.z);
-			Q.push(x3), Q.push(y3), Q.push(z2), Q.push(sqx1), Q.push(sqy2), Q.push(norm.x), Q.push(norm.y), Q.push(norm.z);
-			Q.push(x2), Q.push(y2), Q.push(z1), Q.push(sqx2), Q.push(sqy1), Q.push(norm.x), Q.push(norm.y), Q.push(norm.z);
+			Q.push(x1), Q.push(y1), Q.push(z1), Q.push(sqx1), Q.push(sqy1);
+			if (normalType == FACE) Q.push(norm.x), Q.push(norm.y), Q.push(norm.z);
+			else						Q.push(N1.x), Q.push(N1.y), Q.push(N1.z);
+			Q.push(x2), Q.push(y2), Q.push(z1), Q.push(sqx2), Q.push(sqy1);
+			if (normalType == FACE) Q.push(norm.x), Q.push(norm.y), Q.push(norm.z);
+			else						Q.push(N2.x), Q.push(N2.y), Q.push(N2.z);
+			Q.push(x3), Q.push(y3), Q.push(z2), Q.push(sqx1), Q.push(sqy2);
+			if (normalType == FACE) Q.push(norm.x), Q.push(norm.y), Q.push(norm.z);
+			else						Q.push(N3.x), Q.push(N3.y), Q.push(N3.z);
+			Q.push(x4), Q.push(y4), Q.push(z2), Q.push(sqx2), Q.push(sqy2);
+			if (normalType == FACE) Q.push(norm.x), Q.push(norm.y), Q.push(norm.z);
+			else						Q.push(N4.x), Q.push(N4.y), Q.push(N4.z);
+			Q.push(x3), Q.push(y3), Q.push(z2), Q.push(sqx1), Q.push(sqy2);
+			if (normalType == FACE) Q.push(norm.x), Q.push(norm.y), Q.push(norm.z);
+			else						Q.push(N3.x), Q.push(N3.y), Q.push(N3.z);
+			Q.push(x2), Q.push(y2), Q.push(z1), Q.push(sqx2), Q.push(sqy1);
+			if (normalType == FACE) Q.push(norm.x), Q.push(norm.y), Q.push(norm.z);
+			else						Q.push(N2.x), Q.push(N2.y), Q.push(N2.z);
 		}
 	}
 	for (int i = 0; i < vertexCount * 8; i++)
@@ -241,10 +251,57 @@ Torus::Torus(int columns, int rows, float majorRadius, float minorRadius, float 
 	setBuffer(buffer);
 }
 
-Bezier::Bezier(int _n, int _m, int _secU, int _secV, const std::vector<glm::vec3>& points) :
+const float C[5][5] =
+{
+	{ 1, 0, 0, 0, 0 },
+	{ 1, 1, 0, 0, 0 },
+	{ 1, 2, 1, 0, 0 },
+	{ 1, 3, 3, 1, 0 },
+	{ 1, 4, 6, 4, 1 }
+};
+
+float B(int n, int i, float u)
+{
+	return C[n][i] * pow(u, i) * pow(1 - u, n - i);
+}
+
+float dB(int n, int i, float u)
+{
+	return C[n][i] * (i == 0 ? 0 : i * pow(u, i - 1) * pow(1 - u, n - i))
+		- C[n][i] * (i == n ? 0 : (n - i) * pow(u, i) * pow(1 - u, n - i - 1));
+}
+
+glm::vec3 calcBezierPoint(int n, int m, float u, float v, const std::vector<glm::vec3>& points)
+{
+	glm::vec3 ret(0.0);
+	for (int i = 0; i <= n; i++)
+	{
+		for (int j = 0; j <= m; j++)
+		{
+			ret += B(n, i, u) * B(m, j, v) * points[i * (m + 1) + j];
+		}
+	}
+	return ret;
+}
+
+glm::vec3 calcBezierNormal(int n, int m, float u, float v, const std::vector<glm::vec3>& points)
+{
+	glm::vec3 tan(0.0), btg(0.0);
+	for (int i = 0; i <= n; i++)
+	{
+		for (int j = 0; j <= m; j++)
+		{
+			tan += dB(n, i, u) * B(m, j, v) * points[i * (m + 1) + j];
+			btg += B(n, i, u) * dB(m, j, v) * points[i * (m + 1) + j];
+		}
+	}
+	return -glm::normalize(glm::cross(tan, btg));
+}
+
+Bezier::Bezier(int _n, int _m, int _secU, int _secV, const std::vector<glm::vec3>& points, int normalType) :
 	Shape(_secU * _secV * 6, BEZIER), n(_n), m(_m), secU(_secU), secV(_secV)
 {
-	if ((n + 1) * (m + 1) != points.size())
+	if ((n + 1) * (m + 1) > points.size())
 	{
 		std::cout << "Error: Bezier generator::vector size not equal to (n + 1) * (m + 1)" << std::endl;
 		return;
@@ -262,26 +319,34 @@ Bezier::Bezier(int _n, int _m, int _secU, int _secV, const std::vector<glm::vec3
 		{
 			float u = i * du, v = j * dv;
 			float up = (i + 1) * du, vp = (j + 1) * dv;
-			glm::vec3 P1(0.0), P2(0.0), P3(0.0), P4(0.0);
-			for (int s = 0; s <= n; s++)
-			{
-				for (int t = 0; t <= m; t++)
-				{
-					glm::vec3 Pst = points[s * (m + 1) + t];
-					P1 += B(n, s, u)  * B(m, t, v)  * Pst;
-					P2 += B(n, s, up) * B(m, t, v)  * Pst;
-					P3 += B(n, s, up) * B(m, t, vp) * Pst;
-					P4 += B(n, s, u)  * B(m, t, vp) * Pst;
-				}
-			}
+			glm::vec3 P1 = calcBezierPoint(n, m, u, v, points);
+			glm::vec3 P2 = calcBezierPoint(n, m, up, v, points);
+			glm::vec3 P3 = calcBezierPoint(n, m, up, vp, points);
+			glm::vec3 P4 = calcBezierPoint(n, m, u, vp, points);
+			glm::vec3 N1 = calcBezierNormal(n, m, u, v, points);
+			glm::vec3 N2 = calcBezierNormal(n, m, up, v, points);
+			glm::vec3 N3 = calcBezierNormal(n, m, up, vp, points);
+			glm::vec3 N4 = calcBezierNormal(n, m, u, vp, points);
 			glm::vec3 norm123 = glm::normalize(glm::cross(P2 - P1, P3 - P1));
 			glm::vec3 norm134 = glm::normalize(glm::cross(P3 - P1, P4 - P1));
-			Q.push(P1.x), Q.push(P1.y), Q.push(P1.z), Q.push(u),  Q.push(v),  Q.push(norm123.x), Q.push(norm123.y), Q.push(norm123.z);
-			Q.push(P2.x), Q.push(P2.y), Q.push(P2.z), Q.push(up), Q.push(v),  Q.push(norm123.x), Q.push(norm123.y), Q.push(norm123.z);
-			Q.push(P3.x), Q.push(P3.y), Q.push(P3.z), Q.push(up), Q.push(vp), Q.push(norm123.x), Q.push(norm123.y), Q.push(norm123.z);
-			Q.push(P1.x), Q.push(P1.y), Q.push(P1.z), Q.push(u),  Q.push(v),  Q.push(norm134.x), Q.push(norm134.y), Q.push(norm134.z);
-			Q.push(P3.x), Q.push(P3.y), Q.push(P3.z), Q.push(up), Q.push(vp), Q.push(norm134.x), Q.push(norm134.y), Q.push(norm134.z);
-			Q.push(P4.x), Q.push(P4.y), Q.push(P4.z), Q.push(u),  Q.push(vp), Q.push(norm134.x), Q.push(norm134.y), Q.push(norm134.z);
+			Q.push(P1.x), Q.push(P1.y), Q.push(P1.z), Q.push(u), Q.push(v);
+			if (normalType == FACE) Q.push(norm123.x), Q.push(norm123.y), Q.push(norm123.z);
+			else						Q.push(N1.x), Q.push(N1.y), Q.push(N1.z);
+			Q.push(P2.x), Q.push(P2.y), Q.push(P2.z), Q.push(up), Q.push(v);
+			if (normalType == FACE) Q.push(norm123.x), Q.push(norm123.y), Q.push(norm123.z);
+			else						Q.push(N2.x), Q.push(N2.y), Q.push(N2.z);
+			Q.push(P3.x), Q.push(P3.y), Q.push(P3.z), Q.push(up), Q.push(vp);
+			if (normalType == FACE) Q.push(norm123.x), Q.push(norm123.y), Q.push(norm123.z);
+			else						Q.push(N3.x), Q.push(N3.y), Q.push(N3.z);
+			Q.push(P1.x), Q.push(P1.y), Q.push(P1.z), Q.push(u), Q.push(v);
+			if (normalType == FACE) Q.push(norm134.x), Q.push(norm134.y), Q.push(norm134.z);
+			else						Q.push(N1.x), Q.push(N1.y), Q.push(N1.z);
+			Q.push(P3.x), Q.push(P3.y), Q.push(P3.z), Q.push(up), Q.push(vp);
+			if (normalType == FACE) Q.push(norm134.x), Q.push(norm134.y), Q.push(norm134.z);
+			else						Q.push(N3.x), Q.push(N3.y), Q.push(N3.z);
+			Q.push(P4.x), Q.push(P4.y), Q.push(P4.z), Q.push(u),  Q.push(vp);
+			if (normalType == FACE) Q.push(norm134.x), Q.push(norm134.y), Q.push(norm134.z);
+			else						Q.push(N4.x), Q.push(N4.y), Q.push(N4.z);
 		}
 	}
 	for (int i = 0; i < vertexCount * 8; i++)
