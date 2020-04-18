@@ -4,21 +4,25 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
-#include "VertexBufferLayout.h"
+#include "VertexArray.h"
 
 #include <iostream>
+#include <vector>
 #include <cmath>
 
 class Shape
 {
 public:
+	Shape();
+	~Shape();
 	Shape(int vertexCount, int type);
 	float* data() const { return m_Buffer; }
 	int type() const { return m_Type; }
 	int vertexCount() const { return m_VertexCount; }
-	VertexBufferLayout layout() const { return m_Layout; }
-	int size() const { return m_VertexCount * m_Layout.stride(); }
+	VertexArray& VA() { return m_VA; }
 	void addTangents();
+	void setUpVA();
+	void set(float* buffer, int type, int vertexCount);
 	void setBuffer(float* buffer);
 	enum
 	{
@@ -28,6 +32,7 @@ public:
 		SPHERE,
 		TORUS,
 		BEZIER,
+		TEAPOT,
 		SPECIAL
 	};
 	enum
@@ -40,6 +45,8 @@ private:
 	int m_Type;
 	bool m_WithTangents;
 	int m_VertexCount;
+	VertexBuffer* m_VB;
+	VertexArray m_VA;
 	VertexBufferLayout m_Layout;
 };
 
@@ -85,6 +92,15 @@ public:
 	Bezier(int _n, int _m, int _secU, int _secV, const std::vector<glm::vec3>& points, int normalType);
 	int n, m, secU, secV;
 };
+
+class BezierCurves :
+	public Shape
+{
+public:
+	BezierCurves(const char* BPTfilePath, int secU, int secV, int normalType);
+};
+
+float* bezierGenerate(int n, int m, int secU, int secV, const std::vector<glm::vec3>& points, int normalType);
 
 const float CUBE_VERTICES[] =
 {

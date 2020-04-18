@@ -9,7 +9,20 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
-Shape::Shape(int vertexCount, int type):
+Shape::Shape() :
+	m_WithTangents(false)
+{
+	m_Layout.add<GL_FLOAT>(3);
+	m_Layout.add<GL_FLOAT>(2);
+	m_Layout.add<GL_FLOAT>(3);
+}
+
+Shape::~Shape()
+{
+	if (m_VB != nullptr) delete m_VB;
+}
+
+Shape::Shape(int vertexCount, int type) :
 	m_VertexCount(vertexCount), m_Type(type), m_WithTangents(false)
 {
 	m_Layout.add<GL_FLOAT>(3);
@@ -76,6 +89,28 @@ void Shape::addTangents()
 	m_WithTangents = true;
 	m_Layout.add<GL_FLOAT>(3);
 	m_Layout.add<GL_FLOAT>(3);
+}
+
+void Shape::setUpVA()
+{
+	if (m_Buffer == nullptr)
+	{
+		std::cout << "Shape: Do not set up VA repeatedly" << std::endl;
+		return;
+	}
+	m_VB = new VertexBuffer(m_Buffer, m_VertexCount, m_VertexCount * m_Layout.stride());
+	m_VA.bind();
+	m_VA.addBuffer(*m_VB, m_Layout);
+	m_VB->unbind();
+	m_VA.unbind();
+	delete[]m_Buffer;
+}
+
+void Shape::set(float* buffer, int type, int vertexCount)
+{
+	m_Buffer = buffer;
+	m_Type = type;
+	m_VertexCount = vertexCount;
 }
 
 void Shape::setBuffer(float* buffer)
@@ -301,10 +336,45 @@ glm::vec3 calcBezierNormal(int n, int m, float u, float v, const std::vector<glm
 Bezier::Bezier(int _n, int _m, int _secU, int _secV, const std::vector<glm::vec3>& points, int normalType) :
 	Shape(_secU * _secV * 6, BEZIER), n(_n), m(_m), secU(_secU), secV(_secV)
 {
+	float* buffer = bezierGenerate(n, m, secU, secV, points, normalType);
+	setBuffer(buffer);
+}
+
+BezierCurves::BezierCurves(const char* BPTfilePath, int secU, int secV, int normalType)
+{
+	std::fstream file;
+	file.open(BPTfilePath);
+	int curveCount;
+	file >> curveCount;
+	int vertexCount = curveCount * secU * secV * 6;
+	float* buffer = new float[vertexCount * 8];
+	int stride = secU * secV * 6 * 8;
+	int offset = 0;
+	for (int i = 0; i < curveCount; i++)
+	{
+		int n, m;
+		file >> n >> m;
+		std::vector<glm::vec3> points;
+		for (int j = 0; j < (n + 1) * (m + 1); j++)
+		{
+			glm::vec3 p;
+			file >> p.x >> p.y >> p.z;
+			points.push_back(p);
+		}
+		float* curve = bezierGenerate(n, m, secU, secV, points, normalType);
+		memcpy(buffer + offset, curve, stride * sizeof(float));
+		delete[]curve;
+		offset += stride;
+	}
+	set(buffer, TEAPOT, vertexCount);
+}
+
+float* bezierGenerate(int n, int m, int secU, int secV, const std::vector<glm::vec3>& points, int normalType)
+{
 	if ((n + 1) * (m + 1) > points.size())
 	{
 		std::cout << "Error: Bezier generator::vector size not equal to (n + 1) * (m + 1)" << std::endl;
-		return;
+		return nullptr;
 	}
 	int vertexCount = secU * secV * 6;
 	float* buffer = new float[vertexCount * 8];
@@ -330,22 +400,22 @@ Bezier::Bezier(int _n, int _m, int _secU, int _secV, const std::vector<glm::vec3
 			glm::vec3 norm123 = glm::normalize(glm::cross(P2 - P1, P3 - P1));
 			glm::vec3 norm134 = glm::normalize(glm::cross(P3 - P1, P4 - P1));
 			Q.push(P1.x), Q.push(P1.y), Q.push(P1.z), Q.push(u), Q.push(v);
-			if (normalType == FACE) Q.push(norm123.x), Q.push(norm123.y), Q.push(norm123.z);
+			if (normalType == Shape::FACE) Q.push(norm123.x), Q.push(norm123.y), Q.push(norm123.z);
 			else						Q.push(N1.x), Q.push(N1.y), Q.push(N1.z);
 			Q.push(P2.x), Q.push(P2.y), Q.push(P2.z), Q.push(up), Q.push(v);
-			if (normalType == FACE) Q.push(norm123.x), Q.push(norm123.y), Q.push(norm123.z);
+			if (normalType == Shape::FACE) Q.push(norm123.x), Q.push(norm123.y), Q.push(norm123.z);
 			else						Q.push(N2.x), Q.push(N2.y), Q.push(N2.z);
 			Q.push(P3.x), Q.push(P3.y), Q.push(P3.z), Q.push(up), Q.push(vp);
-			if (normalType == FACE) Q.push(norm123.x), Q.push(norm123.y), Q.push(norm123.z);
+			if (normalType == Shape::FACE) Q.push(norm123.x), Q.push(norm123.y), Q.push(norm123.z);
 			else						Q.push(N3.x), Q.push(N3.y), Q.push(N3.z);
 			Q.push(P1.x), Q.push(P1.y), Q.push(P1.z), Q.push(u), Q.push(v);
-			if (normalType == FACE) Q.push(norm134.x), Q.push(norm134.y), Q.push(norm134.z);
+			if (normalType == Shape::FACE) Q.push(norm134.x), Q.push(norm134.y), Q.push(norm134.z);
 			else						Q.push(N1.x), Q.push(N1.y), Q.push(N1.z);
 			Q.push(P3.x), Q.push(P3.y), Q.push(P3.z), Q.push(up), Q.push(vp);
-			if (normalType == FACE) Q.push(norm134.x), Q.push(norm134.y), Q.push(norm134.z);
+			if (normalType == Shape::FACE) Q.push(norm134.x), Q.push(norm134.y), Q.push(norm134.z);
 			else						Q.push(N3.x), Q.push(N3.y), Q.push(N3.z);
-			Q.push(P4.x), Q.push(P4.y), Q.push(P4.z), Q.push(u),  Q.push(vp);
-			if (normalType == FACE) Q.push(norm134.x), Q.push(norm134.y), Q.push(norm134.z);
+			Q.push(P4.x), Q.push(P4.y), Q.push(P4.z), Q.push(u), Q.push(vp);
+			if (normalType == Shape::FACE) Q.push(norm134.x), Q.push(norm134.y), Q.push(norm134.z);
 			else						Q.push(N4.x), Q.push(N4.y), Q.push(N4.z);
 		}
 	}
@@ -354,5 +424,5 @@ Bezier::Bezier(int _n, int _m, int _secU, int _secV, const std::vector<glm::vec3
 		buffer[i] = Q.front();
 		Q.pop();
 	}
-	setBuffer(buffer);
+	return buffer;
 }
