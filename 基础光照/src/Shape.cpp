@@ -286,6 +286,8 @@ Torus::Torus(int columns, int rows, float majorRadius, float minorRadius, int no
 	setBuffer(buffer);
 }
 
+const float EPS = 1e-6;
+
 const float C[5][5] =
 {
 	{ 1, 0, 0, 0, 0 },
@@ -366,6 +368,7 @@ BezierCurves::BezierCurves(const char* BPTfilePath, int secU, int secV, int norm
 		delete[]curve;
 		offset += stride;
 	}
+	file.close();
 	set(buffer, TEAPOT, vertexCount);
 }
 
@@ -397,26 +400,30 @@ float* bezierGenerate(int n, int m, int secU, int secV, const std::vector<glm::v
 			glm::vec3 N2 = calcBezierNormal(n, m, up, v, points);
 			glm::vec3 N3 = calcBezierNormal(n, m, up, vp, points);
 			glm::vec3 N4 = calcBezierNormal(n, m, u, vp, points);
-			glm::vec3 norm123 = glm::normalize(glm::cross(P2 - P1, P3 - P1));
-			glm::vec3 norm134 = glm::normalize(glm::cross(P3 - P1, P4 - P1));
+			glm::vec3 norm123 = glm::normalize(glm::cross(P3 - P1, P2 - P1));
+			glm::vec3 norm134 = glm::normalize(glm::cross(P4 - P1, P3 - P1));
+			bool degenerated = (glm::length(P1 - P2) < EPS)
+							|| (glm::length(P1 - P4) < EPS)
+							|| (glm::length(P2 - P3) < EPS)
+							|| (glm::length(P3 - P4) < EPS);
 			Q.push(P1.x), Q.push(P1.y), Q.push(P1.z), Q.push(u), Q.push(v);
-			if (normalType == Shape::FACE) Q.push(norm123.x), Q.push(norm123.y), Q.push(norm123.z);
-			else						Q.push(N1.x), Q.push(N1.y), Q.push(N1.z);
+			if (normalType == Shape::FACE || degenerated) Q.push(norm123.x), Q.push(norm123.y), Q.push(norm123.z);
+			else	 Q.push(N1.x), Q.push(N1.y), Q.push(N1.z);
 			Q.push(P2.x), Q.push(P2.y), Q.push(P2.z), Q.push(up), Q.push(v);
-			if (normalType == Shape::FACE) Q.push(norm123.x), Q.push(norm123.y), Q.push(norm123.z);
-			else						Q.push(N2.x), Q.push(N2.y), Q.push(N2.z);
+			if (normalType == Shape::FACE || degenerated) Q.push(norm123.x), Q.push(norm123.y), Q.push(norm123.z);
+			else	 Q.push(N2.x), Q.push(N2.y), Q.push(N2.z);
 			Q.push(P3.x), Q.push(P3.y), Q.push(P3.z), Q.push(up), Q.push(vp);
-			if (normalType == Shape::FACE) Q.push(norm123.x), Q.push(norm123.y), Q.push(norm123.z);
-			else						Q.push(N3.x), Q.push(N3.y), Q.push(N3.z);
+			if (normalType == Shape::FACE || degenerated) Q.push(norm123.x), Q.push(norm123.y), Q.push(norm123.z);
+			else	 Q.push(N3.x), Q.push(N3.y), Q.push(N3.z);
 			Q.push(P1.x), Q.push(P1.y), Q.push(P1.z), Q.push(u), Q.push(v);
-			if (normalType == Shape::FACE) Q.push(norm134.x), Q.push(norm134.y), Q.push(norm134.z);
-			else						Q.push(N1.x), Q.push(N1.y), Q.push(N1.z);
+			if (normalType == Shape::FACE || degenerated) Q.push(norm134.x), Q.push(norm134.y), Q.push(norm134.z);
+			else	 Q.push(N1.x), Q.push(N1.y), Q.push(N1.z);
 			Q.push(P3.x), Q.push(P3.y), Q.push(P3.z), Q.push(up), Q.push(vp);
-			if (normalType == Shape::FACE) Q.push(norm134.x), Q.push(norm134.y), Q.push(norm134.z);
-			else						Q.push(N3.x), Q.push(N3.y), Q.push(N3.z);
+			if (normalType == Shape::FACE || degenerated) Q.push(norm134.x), Q.push(norm134.y), Q.push(norm134.z);
+			else	 Q.push(N3.x), Q.push(N3.y), Q.push(N3.z);
 			Q.push(P4.x), Q.push(P4.y), Q.push(P4.z), Q.push(u), Q.push(vp);
-			if (normalType == Shape::FACE) Q.push(norm134.x), Q.push(norm134.y), Q.push(norm134.z);
-			else						Q.push(N4.x), Q.push(N4.y), Q.push(N4.z);
+			if (normalType == Shape::FACE || degenerated) Q.push(norm134.x), Q.push(norm134.y), Q.push(norm134.z);
+			else	 Q.push(N4.x), Q.push(N4.y), Q.push(N4.z);
 		}
 	}
 	for (int i = 0; i < vertexCount * 8; i++)

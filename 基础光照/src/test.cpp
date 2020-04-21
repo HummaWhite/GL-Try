@@ -164,7 +164,7 @@ int main()
     Square square;
     square.addTangents();
     square.setUpVA();
-    Torus torus(60, 30, 0.5f, 0.2f, Shape::VERTEX);
+    Torus torus(40, 20, 0.5f, 0.2f, Shape::VERTEX);
     torus.addTangents();
     torus.setUpVA();
     BezierCurves teapot("res/model/teapotCGA.bpt", 20, 20, Shape::VERTEX);
@@ -208,7 +208,7 @@ int main()
     shader.setTexture("material.normalMap", normMap);
     Texture ordTex;
     //ordTex.loadSingle("res/texture/crafting_table_front.png", GL_SRGB);
-    ordTex.loadSingle("res/texture/diamond_ore.png");
+    ordTex.loadSingle("res/texture/diamond_ore.png", GL_SRGB);
     shader.setTexture("ordTex", ordTex);
 
     Shader scrShader("res/shader/frameBuffer.shader");
@@ -253,7 +253,7 @@ int main()
     int useTexture = 0;
     int useNormalMap = 1;
     int useReflMap = 1;
-    float reflStrength = 0.0f;
+    float reflStrength = 0.03f;
     int vaIndex = 0;
 
     VertexArray* va[] = { &cube.VA(), &sphere.VA(), &square.VA(), &bezier.VA(), &torus.VA(), &teapot.VA(), &teaspoon.VA() };
@@ -320,9 +320,9 @@ int main()
         renderer.clear();
         ordTex.bind();
         normMap.bind();
-        /*light->attenuation.x = light->attenuation.y = 0;
-        light2->attenuation.x = light2->attenuation.y = 0;
-        light3->attenuation.x = light3->attenuation.y = 0;*/
+        //light->attenuation.x = light->attenuation.y = 0;
+        //light2->attenuation.x = light2->attenuation.y = 0;
+        //light3->attenuation.x = light3->attenuation.y = 0;
 
         shader.enable();
         shader.setUniformMat4("proj", proj);
