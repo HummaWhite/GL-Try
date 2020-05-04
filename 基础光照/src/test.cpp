@@ -11,8 +11,7 @@
 #include "imgui/imgui_impl_opengl3.h"
 
 #include "Shader.h"
-#include "VertexBuffer.h"
-#include "IndexBuffer.h"
+#include "Buffer.h"
 #include "VertexArray.h"
 #include "Renderer.h"
 #include "Texture.h"
@@ -33,6 +32,8 @@ Light* spotLight = new Light(Light::SPOT, glm::vec3(0, 0, 0), VEC_UP, glm::vec3(
 static int VERTICAL_SYNC = 1;
 static float GAMMA = 2.20f;
 static float EXPOSURE = 2.0f;
+static int SHADOW_ON = 1;
+static int USE_BLINN = 1;
 
 bool cursorDisabled = 1, F1Pressed = 0;
 float lastCursorX = W_WIDTH / 2, lastCursorY = W_HEIGHT / 2;
@@ -113,7 +114,7 @@ int main()
 {
     glfwInit();
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 5);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
     GLFWwindow* window = glfwCreateWindow(W_WIDTH, W_HEIGHT, "OpenGL-Try", NULL, NULL);
@@ -212,8 +213,8 @@ int main()
     shader.setTexture("ordTex", ordTex);
 
     Shader scrShader("res/shader/frameBuffer.shader");
-    VertexBuffer scrVb(SCREEN_COORD, 6, sizeof(SCREEN_COORD));
-    VertexBufferLayout scrLayout;
+    Buffer scrVb(SCREEN_COORD, 6, sizeof(SCREEN_COORD));
+    BufferLayout scrLayout;
     scrLayout.add<float>(2);
     VertexArray scrVa;
     scrVa.addBuffer(scrVb, scrLayout);
@@ -269,7 +270,7 @@ int main()
     {
         processInput(window);
         renderer.clear(0.0f, 0.0f, 0.0f);
-        
+
         float timeValue = glfwGetTime();
         float additionY = sin(timeValue * 3.0f) * 6.0f;
         proj = glm::perspective(glm::radians(camera.FOV()), (float)W_WIDTH / (float)W_HEIGHT, 0.1f, 100.0f);
@@ -337,6 +338,8 @@ int main()
         shader.setTexture("material.reflMap", skyTexture);
         shader.setUniform1i("useReflMap", useReflMap);
         shader.setUniform1f("material.reflStrength", reflStrength);
+        shader.setUniform1i("useBlinnPhong", USE_BLINN);
+        shader.setUniform1i("shadowOn", SHADOW_ON);
         for (int i = 0; i < pointLightCount; i++)
         {
             depthBufferTex[i].bind();
@@ -422,6 +425,8 @@ int main()
                 ImGui::ColorEdit3("Diffuse", (float*)&matDiffuse);
                 ImGui::ColorEdit3("Specular", (float*)&matSpecular);
                 ImGui::SliderFloat("Shininess", &matShininess, 2.0f, 48.0f);
+                ImGui::SliderInt("Blinn-Phong", &USE_BLINN, 0, 1);
+                ImGui::SliderInt("Shadow On", &SHADOW_ON, 0, 1);
                 ImGui::SliderInt("Texture on", &useTexture, 0, 1);
                 ImGui::SliderInt("NormalMap on", &useNormalMap, 0, 1);
                 ImGui::SliderInt("ReflMap on", &useReflMap, 0, 1);

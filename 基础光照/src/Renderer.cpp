@@ -6,11 +6,10 @@ void Renderer::clear(float v0, float v1, float v2, float v3) const
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 }
 
-void Renderer::draw(const VertexArray& va, const IndexBuffer& eb, const Shader& shader, GLuint renderMode) const
+void Renderer::draw(const VertexArray& va, const Buffer& eb, const Shader& shader, GLuint renderMode) const
 {
 	shader.enable();
 	va.bind();
-	eb.bind();
 	glPolygonMode(GL_FRONT_AND_BACK, renderMode);
 	glDrawElements(GL_TRIANGLES, eb.count(), GL_UNSIGNED_INT, 0);
 }

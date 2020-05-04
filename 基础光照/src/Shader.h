@@ -13,10 +13,9 @@
 class Shader
 {
 public:
-	GLuint ID;
-public:
 	Shader(const char* filepath);
 	~Shader();
+	GLuint ID() const { return m_ID; }
 	void enable() const;
 	void disable() const;
 	void setUniform1i(const char* name, int v) const;
@@ -33,7 +32,8 @@ public:
 	void setMaterial(const glm::vec3& ambient, const glm::vec3& diffuse,
 		const glm::vec3 specular, float shininess);
 	void useModelMatrix(const glm::mat4& model);
+	static GLint getUniformLocation(GLuint programID, const char* name);
 private:
 	void compileShader(const char* vertexSource, const char* fragmentSource, const char* geometrySource);
-	GLint getUniformLocation(const char* name) const;
+	GLuint m_ID;
 };

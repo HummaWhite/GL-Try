@@ -22,6 +22,7 @@ class Texture
 public:
 	Texture();
 	~Texture();
+	GLuint ID() const { return m_ID; }
 
 	void loadSingle(const std::string& filePath, GLuint internalType = GL_RGBA, GLuint filterType = GL_LINEAR);
 	void loadCube(const std::vector<std::string>& filePaths, GLuint internalType = GL_RGBA, GLuint filterType = GL_LINEAR);
@@ -39,7 +40,7 @@ public:
 
 	int slot;
 private:
-	GLuint ID, m_TextureType;
+	GLuint m_ID, m_TextureType;
 	int m_Width, m_Height, m_BitsPerPixel;
 	bool m_Loaded;
 	static int m_SlotsUsed;

@@ -1,5 +1,5 @@
 //$Vertex
-#version 430 core
+#version 450 core
 layout(location = 0) in vec3 pos;
 
 uniform mat4 model;
@@ -10,7 +10,7 @@ void main()
 }
 
 //$Fragment
-#version 430 core
+#version 450 core
 
 in vec4 fragPos;
 uniform vec3 lightPos;
@@ -31,7 +31,7 @@ void main()
 }
 
 //$Geometry
-#version 430 core
+#version 450 core
 layout(triangles) in;
 layout(triangle_strip, max_vertices = 18) out;
 

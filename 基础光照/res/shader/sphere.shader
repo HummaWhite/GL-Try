@@ -1,5 +1,5 @@
 //$Vertex
-#version 430 core
+#version 450 core
 layout(location = 0) in vec3 aPos;
 layout(location = 1) in vec2 aTexCoord;
 layout(location = 2) in vec3 aNormal;
@@ -18,7 +18,7 @@ void main()
 }
 
 //$Fragment
-#version 430 core
+#version 450 core
 in vec3 fragPos;
 in vec3 normal;
 out vec4 fragColor;

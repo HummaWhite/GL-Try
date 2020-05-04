@@ -8,7 +8,7 @@
 #include <string>
 
 Shader::Shader(const char* filepath)
-	:ID(0)
+	:m_ID(0)
 {
 	std::string vertexCode;
 	std::string fragmentCode;
@@ -58,12 +58,12 @@ Shader::Shader(const char* filepath)
 
 Shader::~Shader()
 {
-	glDeleteProgram(ID);
+	glDeleteProgram(m_ID);
 }
 
 void Shader::enable() const
 {
-	glUseProgram(ID);
+	glUseProgram(m_ID);
 }
 
 void Shader::disable() const
@@ -73,53 +73,53 @@ void Shader::disable() const
 
 void Shader::setUniform1i(const char* name, int v) const
 {
-	glUniform1i(getUniformLocation(name), v);
+	glProgramUniform1i(m_ID, getUniformLocation(m_ID, name), v);
 }
 
 void Shader::setUniform1f(const char* name, float v0) const
 {
-	glUniform1f(getUniformLocation(name), v0);
+	glProgramUniform1f(m_ID, getUniformLocation(m_ID, name), v0);
 }
 
 void Shader::setUniform2f(const char* name, float v0, float v1) const
 {
-	glUniform2f(getUniformLocation(name), v0, v1);
+	glProgramUniform2f(m_ID, getUniformLocation(m_ID, name), v0, v1);
 }
 
 void Shader::setUniform3f(const char* name, float v0, float v1, float v2) const
 {
-	glUniform3f(getUniformLocation(name), v0, v1, v2);
+	glProgramUniform3f(m_ID, getUniformLocation(m_ID, name), v0, v1, v2);
 }
 
 void Shader::setUniform4f(const char* name, float v0, float v1, float v2, float v3) const
 {
-	glUniform4f(getUniformLocation(name), v0, v1, v2, v3);
+	glProgramUniform4f(m_ID, getUniformLocation(m_ID, name), v0, v1, v2, v3);
 }
 
 void Shader::setUniformVec3(const char* name, const glm::vec3 vec) const
 {
-	glUniform3f(getUniformLocation(name), vec.x, vec.y, vec.z);
+	glProgramUniform3f(m_ID, getUniformLocation(m_ID, name), vec.x, vec.y, vec.z);
 }
 
 void Shader::setUniformVec4(const char* name, const glm::vec4 vec) const
 {
-	glUniform4f(getUniformLocation(name), vec.x, vec.y, vec.z, vec.w);
+	glProgramUniform4f(m_ID, getUniformLocation(m_ID, name), vec.x, vec.y, vec.z, vec.w);
 }
 
 void Shader::setUniformMat3(const char* name, const glm::mat3& mat) const
 {
-	glUniformMatrix3fv(getUniformLocation(name), 1, GL_FALSE, &mat[0][0]);
+	glProgramUniformMatrix3fv(m_ID, getUniformLocation(m_ID, name), 1, GL_FALSE, glm::value_ptr(mat));
 }
 
 void Shader::setUniformMat4(const char* name, const glm::mat4& mat) const
 {
-	glUniformMatrix4fv(getUniformLocation(name), 1, GL_FALSE, &mat[0][0]);
+	glProgramUniformMatrix4fv(m_ID, getUniformLocation(m_ID, name), 1, GL_FALSE, glm::value_ptr(mat));
 }
 
 void Shader::setTexture(const char* name, const Texture& tex) const
 {
 	tex.bind();
-	glUniform1i(getUniformLocation(name), tex.slot);
+	glProgramUniform1i(m_ID, getUniformLocation(m_ID, name), tex.slot);
 }
 
 void Shader::setLight(const LightGroup& lightGroup)
@@ -186,6 +186,14 @@ void Shader::useModelMatrix(const glm::mat4& model)
 	setUniformMat3("modelInv", modelInv);
 }
 
+GLint Shader::getUniformLocation(GLuint programID, const char* name)
+{
+	GLint location = glGetUniformLocation(programID, name);
+	if (location == -1)
+		std::cout << "Error: unable to locate the uniform::" << name << " in shader number: " << programID << std::endl;
+	return location;
+}
+
 void Shader::compileShader(const char* vertexSource, const char* fragmentSource, const char* geometrySource)
 {
 	GLuint vertexShader = glCreateShader(GL_VERTEX_SHADER);
@@ -204,20 +212,20 @@ void Shader::compileShader(const char* vertexSource, const char* fragmentSource,
 		glCompileShader(geometryShader);
 	}
 
-	ID = glCreateProgram();
-	glAttachShader(ID, vertexShader);
-	glAttachShader(ID, fragmentShader);
+	m_ID = glCreateProgram();
+	glAttachShader(m_ID, vertexShader);
+	glAttachShader(m_ID, fragmentShader);
 	if (geometrySource != nullptr)
-		glAttachShader(ID, geometryShader);
-	glLinkProgram(ID);
+		glAttachShader(m_ID, geometryShader);
+	glLinkProgram(m_ID);
 
 	GLint compileSuccess, linkSuccess;
-	glGetProgramiv(ID, GL_COMPILE_STATUS, &compileSuccess);
-	glGetProgramiv(ID, GL_LINK_STATUS, &linkSuccess);
+	glGetProgramiv(m_ID, GL_COMPILE_STATUS, &compileSuccess);
+	glGetProgramiv(m_ID, GL_LINK_STATUS, &linkSuccess);
 	if ((!compileSuccess) || (!linkSuccess))
 	{
 		char info[512];
-		glGetProgramInfoLog(ID, 512, NULL, info);
+		glGetProgramInfoLog(m_ID, 512, NULL, info);
 		std::cout << info << std::endl;
 		return;
 	}
@@ -226,13 +234,4 @@ void Shader::compileShader(const char* vertexSource, const char* fragmentSource,
 	glDeleteShader(fragmentShader);
 	if (geometrySource != nullptr)
 		glDeleteShader(geometryShader);
-}
-
-GLint Shader::getUniformLocation(const char* name) const
-{
-	glUseProgram(ID);
-	GLint location = glGetUniformLocation(ID, name);
-	if (location == -1)
-		std::cout << "Error: unable to locate the uniform::" << name << std::endl;
-	return location;
 }

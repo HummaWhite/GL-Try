@@ -7,23 +7,23 @@
 
 #include "GLSizeofType.h"
 
-struct VertexBufferElement
+struct BufferElement
 {
 	GLuint type;
 	int count;
 	bool normalized;
 };
 
-class VertexBufferLayout
+class BufferLayout
 {
 private:
-	std::vector<VertexBufferElement> m_Elements;
+	std::vector<BufferElement> m_Elements;
 	GLuint m_Stride;
 public:
-	VertexBufferLayout() : m_Stride(0) {};
-	~VertexBufferLayout() {};
+	BufferLayout() : m_Stride(0) {};
+	~BufferLayout() {};
 
-	std::vector<VertexBufferElement> elements() const
+	std::vector<BufferElement> elements() const
 	{
 		return m_Elements;
 	}

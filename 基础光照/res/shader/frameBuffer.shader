@@ -1,5 +1,5 @@
 //$Vertex
-#version 430 core
+#version 450 core
 layout(location = 0) in vec2 aTexCoord;
 out vec2 texCoord;
 
@@ -11,7 +11,7 @@ void main()
 }
 
 //$Fragment
-#version 430 core
+#version 450 core
 in vec2 texCoord;
 out vec4 fragColor;
 

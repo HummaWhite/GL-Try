@@ -45,9 +45,9 @@ private:
 	int m_Type;
 	bool m_WithTangents;
 	int m_VertexCount;
-	VertexBuffer* m_VB;
+	Buffer* m_VB;
 	VertexArray m_VA;
-	VertexBufferLayout m_Layout;
+	BufferLayout m_Layout;
 };
 
 class Cube :

@@ -7,12 +7,12 @@ Texture::Texture() :
 	m_Width(0), m_Height(0), m_BitsPerPixel(0),
 	m_TextureType(0), m_Loaded(false)
 {
-	glGenTextures(1, &ID);
+	glGenTextures(1, &m_ID);
 }
 
 Texture::~Texture()
 {
-	glDeleteTextures(1, &ID);
+	glDeleteTextures(1, &m_ID);
 }
 
 void Texture::loadSingle(const std::string& filePath, GLuint internalType, GLuint filterType)
@@ -23,7 +23,7 @@ void Texture::loadSingle(const std::string& filePath, GLuint internalType, GLuin
 		return;
 	}
 	m_TextureType = GL_TEXTURE_2D;
-	glBindTexture(m_TextureType, ID);
+	glBindTexture(m_TextureType, m_ID);
 
 	//stbi_set_flip_vertically_on_load(1);
 	GLubyte* data = stbi_load(filePath.c_str(), &m_Width, &m_Height, &m_BitsPerPixel, 4);
@@ -53,7 +53,7 @@ void Texture::loadCube(const std::vector<std::string>& filePaths, GLuint interna
 		return;
 	}
 	m_TextureType = GL_TEXTURE_CUBE_MAP;
-	glBindTexture(m_TextureType, ID);
+	glBindTexture(m_TextureType, m_ID);
 
 	//stbi_set_flip_vertically_on_load(1);
 
@@ -92,7 +92,7 @@ void Texture::attachDepthBufferCube(const FrameBuffer& depthBuffer, int resoluti
 		return;
 	}
 	m_TextureType = GL_TEXTURE_CUBE_MAP;
-	glBindTexture(m_TextureType, ID);
+	glBindTexture(m_TextureType, m_ID);
 
 	for (int i = 0; i < 6; i++)
 	{
@@ -110,7 +110,7 @@ void Texture::attachDepthBufferCube(const FrameBuffer& depthBuffer, int resoluti
 	glTexParameteri(m_TextureType, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
 
 	depthBuffer.bind();
-	glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, ID, 0);
+	glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, m_ID, 0);
 	glDrawBuffer(GL_NONE);
 	glReadBuffer(GL_NONE);
 	depthBuffer.unbind();
@@ -130,7 +130,7 @@ void Texture::attachColorBufferCube(const FrameBuffer& frameBuffer, int resoluti
 		return;
 	}
 	m_TextureType = GL_TEXTURE_CUBE_MAP;
-	glBindTexture(m_TextureType, ID);
+	glBindTexture(m_TextureType, m_ID);
 
 	for (int i = 0; i < 6; i++)
 	{
@@ -149,7 +149,7 @@ void Texture::attachColorBufferCube(const FrameBuffer& frameBuffer, int resoluti
 
 	frameBuffer.bind();
 	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH32F_STENCIL8, resolution, resolution);
-	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, m_TextureType, ID, 0);
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, m_TextureType, m_ID, 0);
 	frameBuffer.attachRenderBuffer();
 	frameBuffer.unbind();
 
@@ -169,7 +169,7 @@ void Texture::attachFrameBuffer2D(const FrameBuffer& frameBuffer, GLuint type, i
 		return;
 	}
 	m_TextureType = GL_TEXTURE_2D;
-	glBindTexture(m_TextureType, ID);
+	glBindTexture(m_TextureType, m_ID);
 
 	glTexImage2D(m_TextureType, 0, type, width, height, 0, type, GL_FLOAT, nullptr);
 
@@ -177,7 +177,7 @@ void Texture::attachFrameBuffer2D(const FrameBuffer& frameBuffer, GLuint type, i
 	glTexParameteri(m_TextureType, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 
 	frameBuffer.bind();
-	glFramebufferTexture2D(GL_FRAMEBUFFER, type, m_TextureType, ID, 0);
+	glFramebufferTexture2D(GL_FRAMEBUFFER, type, m_TextureType, m_ID, 0);
 	frameBuffer.unbind();
 
 	if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
@@ -196,7 +196,7 @@ void Texture::attachColorBuffer2D(const FrameBuffer& frameBuffer, int width, int
 		return;
 	}
 	m_TextureType = GL_TEXTURE_2D;
-	glBindTexture(m_TextureType, ID);
+	glBindTexture(m_TextureType, m_ID);
 
 	glTexImage2D(m_TextureType, 0, colorFormat, width, height, 0, GL_RGB, GL_FLOAT, nullptr);
 
@@ -205,7 +205,7 @@ void Texture::attachColorBuffer2D(const FrameBuffer& frameBuffer, int width, int
 
 	frameBuffer.bind();
 	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH32F_STENCIL8, width, height);
-	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, m_TextureType, ID, 0);
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, m_TextureType, m_ID, 0);
 	frameBuffer.attachRenderBuffer();
 	frameBuffer.unbind();
 
@@ -219,14 +219,16 @@ void Texture::attachColorBuffer2D(const FrameBuffer& frameBuffer, int width, int
 
 void Texture::bind() const
 {
-	glActiveTexture(GL_TEXTURE0 + slot);
-	glBindTexture(m_TextureType, ID);
+	//glBindTextureUnit(GL_TEXTURE0 + this->slot, m_ID);
+	glActiveTexture(GL_TEXTURE0 + this->slot);
+	glBindTexture(m_TextureType, m_ID);
 }
 
 void Texture::bind(int slot) const
 {
+	//glBindTextureUnit(GL_TEXTURE0 + slot, m_ID);
 	glActiveTexture(GL_TEXTURE0 + slot);
-	glBindTexture(m_TextureType, ID);
+	glBindTexture(m_TextureType, m_ID);
 }
 
 void Texture::unbind() const
