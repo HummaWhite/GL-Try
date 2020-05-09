@@ -10,7 +10,7 @@
 class VertexArray
 {
 public:
-	VertexArray();
+	VertexArray() : m_VerticesCount(0), m_ID(0) {}
 	~VertexArray();
 
 	void addBuffer(const Buffer& vb, const BufferLayout& layout);

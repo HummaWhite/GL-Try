@@ -13,9 +13,10 @@
 class Shader
 {
 public:
-	Shader(const char* filepath);
+	Shader() : m_ID(0) {}
 	~Shader();
 	GLuint ID() const { return m_ID; }
+	void load(const char* filePath);
 	void enable() const;
 	void disable() const;
 	void setUniform1i(const char* name, int v) const;

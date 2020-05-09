@@ -7,8 +7,7 @@
 #include <cstring>
 #include <string>
 
-Shader::Shader(const char* filepath)
-	:m_ID(0)
+void Shader::load(const char* filePath)
 {
 	std::string vertexCode;
 	std::string fragmentCode;
@@ -17,7 +16,7 @@ Shader::Shader(const char* filepath)
 	bool includeGeomeryCode = 0;
 	try
 	{
-		file.open(filepath);
+		file.open(filePath);
 		std::string fileString;
 		while (std::getline(file, fileString))
 		{

@@ -42,6 +42,5 @@ public:
 private:
 	GLuint m_ID, m_TextureType;
 	int m_Width, m_Height, m_BitsPerPixel;
-	bool m_Loaded;
 	static int m_SlotsUsed;
 };

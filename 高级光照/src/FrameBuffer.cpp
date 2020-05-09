@@ -1,16 +1,15 @@
 #include "FrameBuffer.h"
 
-FrameBuffer::FrameBuffer():
-	renderBufferExist(false)
-{
-	glGenFramebuffers(1, &fbID);
-	glGenRenderbuffers(1, &rbID);
-}
-
 FrameBuffer::~FrameBuffer()
 {
 	glDeleteFramebuffers(1, &fbID);
 	glDeleteRenderbuffers(1, &rbID);
+}
+
+void FrameBuffer::generate()
+{
+	glGenFramebuffers(1, &fbID);
+	glGenRenderbuffers(1, &rbID);
 }
 
 void FrameBuffer::bind() const

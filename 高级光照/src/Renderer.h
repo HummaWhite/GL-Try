@@ -15,3 +15,5 @@ public:
 	void draw(const VertexArray& va, const Buffer& eb, const Shader& shader, GLuint renderMode = GL_FILL) const;
 	void draw(const VertexArray& va, const Shader& shader, GLuint renderMode = GL_FILL) const;
 };
+
+static Renderer renderer;

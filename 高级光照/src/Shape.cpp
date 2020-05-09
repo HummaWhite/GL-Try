@@ -9,6 +9,30 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
+void copyMemF(float* &dst, const void* src, int count)
+{
+	memcpy(dst, src, count << 2);
+	dst += count;
+}
+
+void addMemF(float*& dst, float v)
+{
+	*dst++ = v;
+}
+
+void addMemF2(float*& dst, float u, float v)
+{
+	*dst++ = u;
+	*dst++ = v;
+}
+
+void addMemF3(float*& dst, float u, float v, float w)
+{
+	*dst++ = u;
+	*dst++ = v;
+	*dst++ = w;
+}
+
 Shape::Shape() :
 	m_WithTangents(false)
 {
@@ -44,7 +68,8 @@ void Shape::addTangents()
 	}
 	int trianglesCount = m_VertexCount / 3;
 	float* tmp = new float[m_VertexCount * 14];
-	std::queue<float> Q;
+	float* indDst = tmp;
+	float* indSrc = m_Buffer;
 	for (int i = 0; i < trianglesCount; i++)
 	{
 		glm::vec3 p1(m_Buffer[i * 24 + 0], m_Buffer[i * 24 + 1], m_Buffer[i * 24 + 2]);
@@ -73,16 +98,11 @@ void Shape::addTangents()
 
 		for (int j = 0; j < 3; j++)
 		{
-			for (int k = 0; k < 8; k++)
-				Q.push(m_Buffer[i * 24 + j * 8 + k]);
-			Q.push(tangent.x), Q.push(tangent.y), Q.push(tangent.z);
-			Q.push(btangent.x), Q.push(btangent.y), Q.push(btangent.z);
+			copyMemF(indDst, indSrc, 8);
+			copyMemF(indDst, &tangent, 3);
+			copyMemF(indDst, &btangent, 3);
+			indSrc += 8;
 		}
-	}
-	for (int i = 0; i < m_VertexCount * 14; i++)
-	{
-		tmp[i] = Q.front();
-		Q.pop();
 	}
 	delete[]m_Buffer;
 	m_Buffer = tmp;
@@ -91,17 +111,16 @@ void Shape::addTangents()
 	m_Layout.add<GL_FLOAT>(3);
 }
 
-void Shape::setUpVA()
+void Shape::setupVA()
 {
 	if (m_Buffer == nullptr)
 	{
 		std::cout << "Shape: Do not set up VA repeatedly" << std::endl;
 		return;
 	}
-	m_VB = new Buffer(m_Buffer, m_VertexCount, m_VertexCount * m_Layout.stride());
-	m_VA.bind();
+	m_VB = new Buffer;
+	m_VB->loadData(m_Buffer, m_VertexCount, m_VertexCount * m_Layout.stride());
 	m_VA.addBuffer(*m_VB, m_Layout);
-	m_VA.unbind();
 	delete[]m_Buffer;
 }
 
@@ -133,32 +152,38 @@ Square::Square() :
 	setBuffer(buffer);
 }
 
-Cone::Cone(int faces, float radius, float height) :
+Cone::Cone(int faces, float radius, float height, int normalType) :
 	Shape(faces * 3, CONE)
 {
-	std::queue<float> Q;
 	int vertexCount = faces * 3;
-	float* buffer = new float[vertexCount * 8];
+	float* buf = new float[vertexCount * 8];
+	float* ind = buf;
 	float alpha = glm::radians(360.0f / (float)faces);
 	for (int i = 0; i < faces; i++)
 	{
-		float x1 = radius * cos(i * alpha), y1 = radius * sin(i * alpha);
-		float x2 = radius * cos((i + 1) * alpha), y2 = radius * sin((i + 1) * alpha);
+		float a = i * alpha, ap = (i + 1) * alpha;
+		float x1 = radius * cos(a), y1 = radius * sin(a);
+		float x2 = radius * cos(ap), y2 = radius * sin(ap);
+		glm::vec3 Pa(x1, y1, 0.0);
+		glm::vec3 Pb(x2, y2, 0.0);
+		glm::vec3 Pt(0.0, 0.0, height);
 		glm::vec3 va(x1, y1, -height);
 		glm::vec3 vb(x2, y2, -height);
 		glm::vec3 norm = glm::normalize(glm::cross(va, vb));
+		glm::vec3 normA = glm::normalize(glm::cross(va, glm::vec3(-y1, x1, 0.0)));
+		glm::vec3 normB = glm::normalize(glm::cross(vb, glm::vec3(-y2, x2, 0.0)));
 		float sqx1 = 1.0f / faces * i;
 		float sqx2 = 1.0f / faces * (i + 1);
-		Q.push(x1), Q.push(y1), Q.push(0), Q.push(sqx1), Q.push(1.0), Q.push(norm.x), Q.push(norm.y), Q.push(norm.z);
-		Q.push(x2), Q.push(y2), Q.push(0), Q.push(sqx2), Q.push(1.0), Q.push(norm.x), Q.push(norm.y), Q.push(norm.z);
-		Q.push(0), Q.push(0), Q.push(height), Q.push(sqx1), Q.push(0.0), Q.push(norm.x), Q.push(norm.y), Q.push(norm.z);
+
+		copyMemF(ind, &Pa, 3), addMemF2(ind, sqx1, 1.0);
+		if (normalType == Shape::VERTEX) copyMemF(ind, &normA, 3);
+		else copyMemF(ind, &norm, 3);
+		copyMemF(ind, &Pb, 3), addMemF2(ind, sqx2, 1.0);
+		if (normalType == Shape::VERTEX) copyMemF(ind, &normB, 3);
+		else copyMemF(ind, &norm, 3);
+		copyMemF(ind, &Pt, 3), addMemF2(ind, sqx1, 0.0), copyMemF(ind, &norm, 3);
 	}
-	for (int i = 0; i < vertexCount * 8; i++)
-	{
-		buffer[i] = Q.front();
-		Q.pop();
-	}
-	setBuffer(buffer);
+	setBuffer(buf);
 }
 
 Sphere::Sphere(int columns, int rows, float radius, int normalType, float Atheta, float Arho) :
@@ -166,23 +191,25 @@ Sphere::Sphere(int columns, int rows, float radius, int normalType, float Atheta
 {
 	int vertexCount = rows * columns * 6;
 	float* buffer = new float[vertexCount * 8];
+	float* ind = buffer;
 	float theta = glm::radians(Atheta / (float)columns);
 	float rho = glm::radians(Arho / (float)rows);
-	std::queue<float> Q;
 	for (int i = 0; i < columns; i++)
 	{
+		float t = i * theta, tp = (i + 1) * theta;
 		for (int j = 0; j < rows; j++)
 		{
-			float z1 = radius * cos(j * rho);
-			float z2 = radius * cos((j + 1) * rho);
-			float x1 = radius * sin(j * rho) * cos(i * theta);
-			float x2 = radius * sin(j * rho) * cos((i + 1) * theta);
-			float x3 = radius * sin((j + 1) * rho) * cos(i * theta);
-			float x4 = radius * sin((j + 1) * rho) * cos((i + 1) * theta);
-			float y1 = radius * sin(j * rho) * sin(i * theta);
-			float y2 = radius * sin(j * rho) * sin((i + 1) * theta);
-			float y3 = radius * sin((j + 1) * rho) * sin(i * theta);
-			float y4 = radius * sin((j + 1) * rho) * sin((i + 1) * theta);
+			float r = j * rho, rp = (j + 1) * rho;
+			float z1 = radius * cos(r);
+			float z2 = radius * cos(rp);
+			float x1 = radius * sin(r) * cos(t);
+			float x2 = radius * sin(r) * cos(tp);
+			float x3 = radius * sin(rp) * cos(t);
+			float x4 = radius * sin(rp) * cos(tp);
+			float y1 = radius * sin(r) * sin(t);
+			float y2 = radius * sin(r) * sin(tp);
+			float y3 = radius * sin(rp) * sin(t);
+			float y4 = radius * sin(rp) * sin(tp);
 			glm::vec3 va(x3 - x2, y3 - y2, z2 - z1);
 			glm::vec3 vb(x4 - x1, y4 - y1, z2 - z1);
 			glm::vec3 norm = glm::normalize(glm::cross(va, vb));
@@ -194,30 +221,26 @@ Sphere::Sphere(int columns, int rows, float radius, int normalType, float Atheta
 			float sqx2 = 1.0f / columns * (i + 1);
 			float sqy1 = 1.0f / rows * j;
 			float sqy2 = 1.0f / rows * (j + 1);
-			Q.push(x1), Q.push(y1), Q.push(z1), Q.push(sqx1), Q.push(sqy1);
-			if (normalType == FACE) Q.push(norm.x), Q.push(norm.y), Q.push(norm.z);
-			else						Q.push(norm1.x), Q.push(norm1.y), Q.push(norm1.z);
-			Q.push(x2), Q.push(y2), Q.push(z1), Q.push(sqx2), Q.push(sqy1);
-			if (normalType == FACE) Q.push(norm.x), Q.push(norm.y), Q.push(norm.z);
-			else						Q.push(norm2.x), Q.push(norm2.y), Q.push(norm2.z);
-			Q.push(x3), Q.push(y3), Q.push(z2), Q.push(sqx1), Q.push(sqy2);
-			if (normalType == FACE) Q.push(norm.x), Q.push(norm.y), Q.push(norm.z);
-			else						Q.push(norm3.x), Q.push(norm3.y), Q.push(norm3.z);
-			Q.push(x4), Q.push(y4), Q.push(z2), Q.push(sqx2), Q.push(sqy2);
-			if (normalType == FACE) Q.push(norm.x), Q.push(norm.y), Q.push(norm.z);
-			else						Q.push(norm4.x), Q.push(norm4.y), Q.push(norm4.z);
-			Q.push(x3), Q.push(y3), Q.push(z2), Q.push(sqx1), Q.push(sqy2);
-			if (normalType == FACE) Q.push(norm.x), Q.push(norm.y), Q.push(norm.z);
-			else						Q.push(norm3.x), Q.push(norm3.y), Q.push(norm3.z);
-			Q.push(x2), Q.push(y2), Q.push(z1), Q.push(sqx2), Q.push(sqy1);
-			if (normalType == FACE) Q.push(norm.x), Q.push(norm.y), Q.push(norm.z);
-			else						Q.push(norm2.x), Q.push(norm2.y), Q.push(norm2.z);
+
+			addMemF3(ind, x1, y1, z1), addMemF2(ind, sqx1, sqy1);
+			if (normalType == FACE) copyMemF(ind, &norm, 3);
+			else	 copyMemF(ind, &norm1, 3);
+			addMemF3(ind, x2, y2, z1), addMemF2(ind, sqx2, sqy1);
+			if (normalType == FACE) copyMemF(ind, &norm, 3);
+			else	 copyMemF(ind, &norm2, 3);
+			addMemF3(ind, x3, y3, z2), addMemF2(ind, sqx1, sqy2);
+			if (normalType == FACE) copyMemF(ind, &norm, 3);
+			else	 copyMemF(ind, &norm3, 3);
+			addMemF3(ind, x4, y4, z2), addMemF2(ind, sqx2, sqy2);
+			if (normalType == FACE) copyMemF(ind, &norm, 3);
+			else	 copyMemF(ind, &norm4, 3);
+			addMemF3(ind, x3, y3, z2), addMemF2(ind, sqx1, sqy2);
+			if (normalType == FACE) copyMemF(ind, &norm, 3);
+			else	 copyMemF(ind, &norm3, 3);
+			addMemF3(ind, x2, y2, z1), addMemF2(ind, sqx2, sqy1);
+			if (normalType == FACE) copyMemF(ind, &norm, 3);
+			else	 copyMemF(ind, &norm2, 3);
 		}
-	}
-	for (int i = 0; i < vertexCount * 8; i++)
-	{
-		buffer[i] = Q.front();
-		Q.pop();
 	}
 	setBuffer(buffer);
 }
@@ -227,9 +250,9 @@ Torus::Torus(int columns, int rows, float majorRadius, float minorRadius, int no
 {
 	int vertexCount = columns * rows * 6;
 	float* buffer = new float[vertexCount * 8];
+	float* ind = buffer;
 	float dAtheta = glm::radians(Atheta / (float)columns);
 	float dBtheta = glm::radians(Btheta / (float)rows);
-	std::queue<float> Q;
 	for (int i = 0; i < columns; i++)
 	{
 		for (int j = 0; j < rows; j++)
@@ -257,30 +280,26 @@ Torus::Torus(int columns, int rows, float majorRadius, float minorRadius, int no
 			float sqx2 = 1.0f / columns * (i + 1);
 			float sqy1 = 1.0f / rows * j;
 			float sqy2 = 1.0f / rows * (j + 1);
-			Q.push(x1), Q.push(y1), Q.push(z1), Q.push(sqx1), Q.push(sqy1);
-			if (normalType == FACE) Q.push(norm.x), Q.push(norm.y), Q.push(norm.z);
-			else						Q.push(N1.x), Q.push(N1.y), Q.push(N1.z);
-			Q.push(x2), Q.push(y2), Q.push(z1), Q.push(sqx2), Q.push(sqy1);
-			if (normalType == FACE) Q.push(norm.x), Q.push(norm.y), Q.push(norm.z);
-			else						Q.push(N2.x), Q.push(N2.y), Q.push(N2.z);
-			Q.push(x3), Q.push(y3), Q.push(z2), Q.push(sqx1), Q.push(sqy2);
-			if (normalType == FACE) Q.push(norm.x), Q.push(norm.y), Q.push(norm.z);
-			else						Q.push(N3.x), Q.push(N3.y), Q.push(N3.z);
-			Q.push(x4), Q.push(y4), Q.push(z2), Q.push(sqx2), Q.push(sqy2);
-			if (normalType == FACE) Q.push(norm.x), Q.push(norm.y), Q.push(norm.z);
-			else						Q.push(N4.x), Q.push(N4.y), Q.push(N4.z);
-			Q.push(x3), Q.push(y3), Q.push(z2), Q.push(sqx1), Q.push(sqy2);
-			if (normalType == FACE) Q.push(norm.x), Q.push(norm.y), Q.push(norm.z);
-			else						Q.push(N3.x), Q.push(N3.y), Q.push(N3.z);
-			Q.push(x2), Q.push(y2), Q.push(z1), Q.push(sqx2), Q.push(sqy1);
-			if (normalType == FACE) Q.push(norm.x), Q.push(norm.y), Q.push(norm.z);
-			else						Q.push(N2.x), Q.push(N2.y), Q.push(N2.z);
+
+			addMemF3(ind, x1, y1, z1), addMemF2(ind, sqx1, sqy1);
+			if (normalType == FACE) copyMemF(ind, &norm, 3);
+			else	 copyMemF(ind, &N1, 3);
+			addMemF3(ind, x2, y2, z1), addMemF2(ind, sqx2, sqy1);
+			if (normalType == FACE) copyMemF(ind, &norm, 3);
+			else	 copyMemF(ind, &N2, 3);
+			addMemF3(ind, x3, y3, z2), addMemF2(ind, sqx1, sqy2);
+			if (normalType == FACE) copyMemF(ind, &norm, 3);
+			else	 copyMemF(ind, &N3, 3);
+			addMemF3(ind, x4, y4, z2), addMemF2(ind, sqx2, sqy2);
+			if (normalType == FACE) copyMemF(ind, &norm, 3);
+			else	 copyMemF(ind, &N4, 3);
+			addMemF3(ind, x3, y3, z2), addMemF2(ind, sqx1, sqy2);
+			if (normalType == FACE) copyMemF(ind, &norm, 3);
+			else	 copyMemF(ind, &N3, 3);
+			addMemF3(ind, x2, y2, z1), addMemF2(ind, sqx2, sqy1);
+			if (normalType == FACE) copyMemF(ind, &norm, 3);
+			else	 copyMemF(ind, &N2, 3);
 		}
-	}
-	for (int i = 0; i < vertexCount * 8; i++)
-	{
-		buffer[i] = Q.front();
-		Q.pop();
 	}
 	setBuffer(buffer);
 }
@@ -379,8 +398,8 @@ float* bezierGenerate(int n, int m, int secU, int secV, const std::vector<glm::v
 		return nullptr;
 	}
 	int vertexCount = secU * secV * 6;
-	float* buffer = new float[vertexCount * 8];
-	std::queue<float> Q;
+	float* buf = new float[vertexCount * 8];
+	float* ind = buf;
 
 	float du = 1.0 / (float)secU;
 	float dv = 1.0 / (float)secV;
@@ -401,34 +420,33 @@ float* bezierGenerate(int n, int m, int secU, int secV, const std::vector<glm::v
 			glm::vec3 N4 = calcBezierNormal(n, m, u, vp, points);
 			glm::vec3 norm123 = glm::normalize(glm::cross(P3 - P1, P2 - P1));
 			glm::vec3 norm134 = glm::normalize(glm::cross(P4 - P1, P3 - P1));
+
 			bool degenerated = (glm::length(P1 - P2) < EPS)
-							|| (glm::length(P1 - P4) < EPS)
-							|| (glm::length(P2 - P3) < EPS)
-							|| (glm::length(P3 - P4) < EPS);
-			Q.push(P1.x), Q.push(P1.y), Q.push(P1.z), Q.push(u), Q.push(v);
-			if (normalType == Shape::FACE || degenerated) Q.push(norm123.x), Q.push(norm123.y), Q.push(norm123.z);
-			else	 Q.push(N1.x), Q.push(N1.y), Q.push(N1.z);
-			Q.push(P2.x), Q.push(P2.y), Q.push(P2.z), Q.push(up), Q.push(v);
-			if (normalType == Shape::FACE || degenerated) Q.push(norm123.x), Q.push(norm123.y), Q.push(norm123.z);
-			else	 Q.push(N2.x), Q.push(N2.y), Q.push(N2.z);
-			Q.push(P3.x), Q.push(P3.y), Q.push(P3.z), Q.push(up), Q.push(vp);
-			if (normalType == Shape::FACE || degenerated) Q.push(norm123.x), Q.push(norm123.y), Q.push(norm123.z);
-			else	 Q.push(N3.x), Q.push(N3.y), Q.push(N3.z);
-			Q.push(P1.x), Q.push(P1.y), Q.push(P1.z), Q.push(u), Q.push(v);
-			if (normalType == Shape::FACE || degenerated) Q.push(norm134.x), Q.push(norm134.y), Q.push(norm134.z);
-			else	 Q.push(N1.x), Q.push(N1.y), Q.push(N1.z);
-			Q.push(P3.x), Q.push(P3.y), Q.push(P3.z), Q.push(up), Q.push(vp);
-			if (normalType == Shape::FACE || degenerated) Q.push(norm134.x), Q.push(norm134.y), Q.push(norm134.z);
-			else	 Q.push(N3.x), Q.push(N3.y), Q.push(N3.z);
-			Q.push(P4.x), Q.push(P4.y), Q.push(P4.z), Q.push(u), Q.push(vp);
-			if (normalType == Shape::FACE || degenerated) Q.push(norm134.x), Q.push(norm134.y), Q.push(norm134.z);
-			else	 Q.push(N4.x), Q.push(N4.y), Q.push(N4.z);
+				|| (glm::length(P1 - P4) < EPS)
+				|| (glm::length(P2 - P3) < EPS)
+				|| (glm::length(P3 - P4) < EPS);
+			degenerated |= (normalType == Shape::FACE);
+
+			copyMemF(ind, &P1, 3), addMemF2(ind, u, v);
+			if (degenerated) copyMemF(ind, &norm123, 3);
+			else	 copyMemF(ind, &N1, 3);
+			copyMemF(ind, &P2, 3), addMemF2(ind, up, v);
+			if (degenerated) copyMemF(ind, &norm123, 3);
+			else	 copyMemF(ind, &N2, 3);
+			copyMemF(ind, &P3, 3), addMemF2(ind, up, vp);
+			if (degenerated) copyMemF(ind, &norm123, 3);
+			else	 copyMemF(ind, &N3, 3);
+
+			copyMemF(ind, &P1, 3), addMemF2(ind, u, v);
+			if (degenerated) copyMemF(ind, &norm134, 3);
+			else	 copyMemF(ind, &N1, 3);
+			copyMemF(ind, &P3, 3), addMemF2(ind, up, vp);
+			if (degenerated) copyMemF(ind, &norm134, 3);
+			else	 copyMemF(ind, &N3, 3);
+			copyMemF(ind, &P4, 3), addMemF2(ind, u, vp);
+			if (degenerated) copyMemF(ind, &norm134, 3);
+			else	 copyMemF(ind, &N4, 3);
 		}
 	}
-	for (int i = 0; i < vertexCount * 8; i++)
-	{
-		buffer[i] = Q.front();
-		Q.pop();
-	}
-	return buffer;
+	return buf;
 }

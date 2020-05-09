@@ -4,10 +4,8 @@
 int Texture::m_SlotsUsed = 0;
 
 Texture::Texture() :
-	m_Width(0), m_Height(0), m_BitsPerPixel(0),
-	m_TextureType(0), m_Loaded(false)
+	m_Width(0), m_Height(0), m_BitsPerPixel(0), m_TextureType(0), m_ID(0)
 {
-	glGenTextures(1, &m_ID);
 }
 
 Texture::~Texture()
@@ -17,13 +15,11 @@ Texture::~Texture()
 
 void Texture::loadSingle(const std::string& filePath, GLuint internalType, GLuint filterType)
 {
-	if (m_Loaded)
+	if (m_ID)
 	{
 		std::cout << "Error: texture already loaded for this object" << std::endl;
 		return;
 	}
-	m_TextureType = GL_TEXTURE_2D;
-	glBindTexture(m_TextureType, m_ID);
 
 	//stbi_set_flip_vertically_on_load(1);
 	GLubyte* data = stbi_load(filePath.c_str(), &m_Width, &m_Height, &m_BitsPerPixel, 4);
@@ -33,6 +29,10 @@ void Texture::loadSingle(const std::string& filePath, GLuint internalType, GLuin
 		return;
 	}
 
+	m_TextureType = GL_TEXTURE_2D;
+	glGenTextures(1, &m_ID);
+	glBindTexture(m_TextureType, m_ID);
+
 	glTexImage2D(m_TextureType, 0, internalType, m_Width, m_Height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
 	glTexParameteri(m_TextureType, GL_TEXTURE_MIN_FILTER, filterType);
 	glTexParameteri(m_TextureType, GL_TEXTURE_MAG_FILTER, filterType);
@@ -41,21 +41,22 @@ void Texture::loadSingle(const std::string& filePath, GLuint internalType, GLuin
 	glBindTexture(m_TextureType, 0);
 
 	if (data != nullptr) stbi_image_free(data);
-	m_Loaded = true;
 	slot = m_SlotsUsed++;
 }
 
 void Texture::loadCube(const std::vector<std::string>& filePaths, GLuint internalType, GLuint filterType)
 {
-	if (m_Loaded)
+	if (m_ID)
 	{
 		std::cout << "Error: texture already loaded for this object" << std::endl;
 		return;
 	}
-	m_TextureType = GL_TEXTURE_CUBE_MAP;
-	glBindTexture(m_TextureType, m_ID);
 
 	//stbi_set_flip_vertically_on_load(1);
+
+	m_TextureType = GL_TEXTURE_CUBE_MAP;
+	glGenTextures(1, &m_ID);
+	glBindTexture(m_TextureType, m_ID);
 
 	for (int i = 0; i < filePaths.size(); i++)
 	{
@@ -80,18 +81,19 @@ void Texture::loadCube(const std::vector<std::string>& filePaths, GLuint interna
 	glTexParameteri(m_TextureType, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
 	glBindTexture(m_TextureType, 0);
 
-	m_Loaded = true;
 	slot = m_SlotsUsed++;
 }
 
 void Texture::attachDepthBufferCube(const FrameBuffer& depthBuffer, int resolution)
 {
-	if (m_Loaded)
+	if (m_ID)
 	{
 		std::cout << "Error: texture already loaded for this object" << std::endl;
 		return;
 	}
+
 	m_TextureType = GL_TEXTURE_CUBE_MAP;
+	glGenTextures(1, &m_ID);
 	glBindTexture(m_TextureType, m_ID);
 
 	for (int i = 0; i < 6; i++)
@@ -102,7 +104,6 @@ void Texture::attachDepthBufferCube(const FrameBuffer& depthBuffer, int resoluti
 			resolution, resolution, 0, GL_DEPTH_COMPONENT, GL_FLOAT, nullptr
 		);
 	}
-
 	glTexParameteri(m_TextureType, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 	glTexParameteri(m_TextureType, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 	glTexParameteri(m_TextureType, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
@@ -118,18 +119,19 @@ void Texture::attachDepthBufferCube(const FrameBuffer& depthBuffer, int resoluti
 		std::cout << "Error: framebuffer not complete" << std::endl;
 
 	glBindTexture(m_TextureType, 0);
-	m_Loaded = true;
 	slot = m_SlotsUsed++;
 }
 
 void Texture::attachColorBufferCube(const FrameBuffer& frameBuffer, int resolution, GLuint colorFormat)
 {
-	if (m_Loaded)
+	if (m_ID)
 	{
 		std::cout << "Error: texture already loaded for this object" << std::endl;
 		return;
 	}
+
 	m_TextureType = GL_TEXTURE_CUBE_MAP;
+	glGenTextures(1, &m_ID);
 	glBindTexture(m_TextureType, m_ID);
 
 	for (int i = 0; i < 6; i++)
@@ -140,7 +142,6 @@ void Texture::attachColorBufferCube(const FrameBuffer& frameBuffer, int resoluti
 			resolution, resolution, 0, GL_RGB, GL_FLOAT, nullptr
 		);
 	}
-
 	glTexParameteri(m_TextureType, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 	glTexParameteri(m_TextureType, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 	glTexParameteri(m_TextureType, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
@@ -157,22 +158,22 @@ void Texture::attachColorBufferCube(const FrameBuffer& frameBuffer, int resoluti
 		std::cout << "Error: framebuffer not complete" << std::endl;
 
 	glBindTexture(m_TextureType, 0);
-	m_Loaded = true;
 	slot = m_SlotsUsed++;
 }
 
 void Texture::attachFrameBuffer2D(const FrameBuffer& frameBuffer, GLuint type, int width, int height)
 {
-	if (m_Loaded)
+	if (m_ID)
 	{
 		std::cout << "Error: texture already loaded for this object" << std::endl;
 		return;
 	}
+
 	m_TextureType = GL_TEXTURE_2D;
+	glGenTextures(1, &m_ID);
 	glBindTexture(m_TextureType, m_ID);
 
 	glTexImage2D(m_TextureType, 0, type, width, height, 0, type, GL_FLOAT, nullptr);
-
 	glTexParameteri(m_TextureType, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 	glTexParameteri(m_TextureType, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 
@@ -184,22 +185,22 @@ void Texture::attachFrameBuffer2D(const FrameBuffer& frameBuffer, GLuint type, i
 		std::cout << "Error: framebuffer not complete" << std::endl;
 
 	glBindTexture(m_TextureType, 0);
-	m_Loaded = true;
 	slot = m_SlotsUsed++;
 }
 
 void Texture::attachColorBuffer2D(const FrameBuffer& frameBuffer, int width, int height, GLuint colorFormat)
 {
-	if (m_Loaded)
+	if (m_ID)
 	{
 		std::cout << "Error: texture already loaded for this object" << std::endl;
 		return;
 	}
+
 	m_TextureType = GL_TEXTURE_2D;
+	glGenTextures(1, &m_ID);
 	glBindTexture(m_TextureType, m_ID);
 
 	glTexImage2D(m_TextureType, 0, colorFormat, width, height, 0, GL_RGB, GL_FLOAT, nullptr);
-
 	glTexParameteri(m_TextureType, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 	glTexParameteri(m_TextureType, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 
@@ -213,7 +214,6 @@ void Texture::attachColorBuffer2D(const FrameBuffer& frameBuffer, int width, int
 		std::cout << "Error: framebuffer not complete" << std::endl;
 
 	glBindTexture(m_TextureType, 0);
-	m_Loaded = true;
 	slot = m_SlotsUsed++;
 }
 

@@ -21,7 +21,7 @@ public:
 	int vertexCount() const { return m_VertexCount; }
 	VertexArray& VA() { return m_VA; }
 	void addTangents();
-	void setUpVA();
+	void setupVA();
 	void set(float* buffer, int type, int vertexCount);
 	void setBuffer(float* buffer);
 	enum
@@ -68,7 +68,7 @@ class Cone :
 	public Shape
 {
 public:
-	Cone(int faces, float radius, float height);
+	Cone(int faces, float radius, float height, int normalType);
 };
 
 class Sphere :

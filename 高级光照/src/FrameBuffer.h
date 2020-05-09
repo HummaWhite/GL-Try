@@ -9,8 +9,9 @@
 class FrameBuffer
 {
 public:
-	FrameBuffer();
+	FrameBuffer() : renderBufferExist(false) {}
 	~FrameBuffer();
+	void generate();
 
 	void bind() const;
 	void unbind() const;
