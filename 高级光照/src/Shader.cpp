@@ -14,6 +14,9 @@ void Shader::load(const char* filePath)
 	std::string geometryCode;
 	std::fstream file;
 	bool includeGeomeryCode = 0;
+
+	std::cout << "Loading Shader: " << filePath << " ... ";
+
 	try
 	{
 		file.open(filePath);
@@ -115,10 +118,10 @@ void Shader::setUniformMat4(const char* name, const glm::mat4& mat) const
 	glProgramUniformMatrix4fv(m_ID, getUniformLocation(m_ID, name), 1, GL_FALSE, glm::value_ptr(mat));
 }
 
-void Shader::setTexture(const char* name, const Texture& tex) const
+void Shader::setTexture(const char* name, const Texture& tex, int unit) const
 {
-	tex.bind();
-	glProgramUniform1i(m_ID, getUniformLocation(m_ID, name), tex.slot);
+	glBindTextureUnit(unit, tex.ID());
+	setUniform1i(name, unit);
 }
 
 void Shader::setLight(const LightGroup& lightGroup)
@@ -223,4 +226,6 @@ void Shader::compileShader(const char* vertexSource, const char* fragmentSource,
 	glDeleteShader(fragmentShader);
 	if (geometrySource != nullptr)
 		glDeleteShader(geometryShader);
+
+	std::cout << "done" << std::endl;
 }

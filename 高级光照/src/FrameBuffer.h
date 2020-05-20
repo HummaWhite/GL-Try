@@ -4,19 +4,32 @@
 #include <vector>
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
-#include <glm/glm.hpp>
+
+#include "Texture.h"
+#include "RenderBuffer.h"
 
 class FrameBuffer
 {
 public:
-	FrameBuffer() : renderBufferExist(false) {}
+	FrameBuffer() : m_ID(0), m_Width(0), m_Height(0) {}
 	~FrameBuffer();
-	void generate();
 
+	GLuint ID() const { return m_ID; }
+	int width() const { return m_Width; }
+	int height() const { return m_Height; }
+
+	void generate(int width, int height);
 	void bind() const;
 	void unbind() const;
-	void attachRenderBuffer() const;
+	void attachRenderBuffer(GLenum attachment, RenderBuffer& renderBuffer);
+	void detachRenderBuffer(GLenum attachment);
+	void attachTexture(GLenum attachment, Texture& texture);
+	void detachTexture(GLenum attachment);
+	bool checkComplete();
+
+	void activateAttachmentTargets(std::vector<GLenum> attachments);
+
 private:
-	GLuint fbID, rbID;
-	bool renderBufferExist;
+	GLuint m_ID;
+	int m_Width, m_Height;
 };

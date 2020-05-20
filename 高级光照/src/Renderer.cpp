@@ -6,12 +6,22 @@ void Renderer::clear(float v0, float v1, float v2, float v3) const
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 }
 
+void Renderer::clearFrameBuffer(FrameBuffer& frameBuffer, float v0, float v1, float v2, float v3)
+{
+	frameBuffer.bind();
+	glClearColor(v0, v1, v2, v3);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	frameBuffer.unbind();
+}
+
 void Renderer::draw(const VertexArray& va, const Buffer& eb, const Shader& shader, GLuint renderMode) const
 {
 	shader.enable();
 	va.bind();
+	glVertexArrayElementBuffer(va.ID(), eb.ID());
 	glPolygonMode(GL_FRONT_AND_BACK, renderMode);
 	glDrawElements(GL_TRIANGLES, eb.count(), GL_UNSIGNED_INT, 0);
+	glVertexArrayElementBuffer(va.ID(), 0);
 }
 
 void Renderer::draw(const VertexArray& va, const Shader& shader, GLuint renderMode) const
@@ -20,4 +30,30 @@ void Renderer::draw(const VertexArray& va, const Shader& shader, GLuint renderMo
 	va.bind();
 	glPolygonMode(GL_FRONT_AND_BACK, renderMode);
 	glDrawArrays(GL_TRIANGLES, 0, va.count());
+}
+
+void Renderer::drawToFrameBuffer(const VertexArray& va, const Buffer& eb, const Shader& shader, const FrameBuffer& frameBuffer, GLuint renderMode) const
+{
+	frameBuffer.bind();
+
+	shader.enable();
+	va.bind();
+	glVertexArrayElementBuffer(va.ID(), eb.ID());
+	glPolygonMode(GL_FRONT_AND_BACK, renderMode);
+	glDrawElements(GL_TRIANGLES, eb.count(), GL_UNSIGNED_INT, 0);
+	glVertexArrayElementBuffer(va.ID(), 0);
+
+	frameBuffer.unbind();
+}
+
+void Renderer::drawToFrameBuffer(const VertexArray& va, const Shader& shader, const FrameBuffer& frameBuffer, GLuint renderMode) const
+{
+	frameBuffer.bind();
+
+	shader.enable();
+	va.bind();
+	glPolygonMode(GL_FRONT_AND_BACK, renderMode);
+	glDrawArrays(GL_TRIANGLES, 0, va.count());
+
+	frameBuffer.unbind();
 }

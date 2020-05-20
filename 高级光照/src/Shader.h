@@ -28,7 +28,7 @@ public:
 	void setUniformVec4(const char* name, const glm::vec4& vec) const;
 	void setUniformMat3(const char* name, const glm::mat3& mat) const;
 	void setUniformMat4(const char* name, const glm::mat4& mat) const;
-	void setTexture(const char* name, const Texture& tex) const;
+	void setTexture(const char* name, const Texture& tex, int unit) const;
 	void setLight(const LightGroup& lightGroup);
 	void setMaterial(const glm::vec3& albedo, float metallic, float roughness, float ao);
 	void useModelMatrix(const glm::mat4& model);

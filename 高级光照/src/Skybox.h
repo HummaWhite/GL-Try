@@ -30,12 +30,12 @@ public:
 	void setView(const glm::mat4& viewMatrix);
 	void draw();
 
-	Texture& texture() { return m_SkyboxTex; }
+	Texture& texture() { return *m_SkyboxTex; }
 
 	static Shader m_Shader;
 
 private:
 	int m_Type;
 	Shape* m_Shape;
-	Texture m_SkyboxTex;
+	Texture* m_SkyboxTex;
 };

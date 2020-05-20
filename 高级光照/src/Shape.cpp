@@ -67,7 +67,7 @@ void Shape::addTangents()
 		return;
 	}
 	int trianglesCount = m_VertexCount / 3;
-	float* tmp = new float[m_VertexCount * 14];
+	float* tmp = new float[m_VertexCount * 11];
 	float* indDst = tmp;
 	float* indSrc = m_Buffer;
 	for (int i = 0; i < trianglesCount; i++)
@@ -100,14 +100,12 @@ void Shape::addTangents()
 		{
 			copyMemF(indDst, indSrc, 8);
 			copyMemF(indDst, &tangent, 3);
-			copyMemF(indDst, &btangent, 3);
 			indSrc += 8;
 		}
 	}
 	delete[]m_Buffer;
 	m_Buffer = tmp;
 	m_WithTangents = true;
-	m_Layout.add<GL_FLOAT>(3);
 	m_Layout.add<GL_FLOAT>(3);
 }
 
@@ -118,8 +116,7 @@ void Shape::setupVA()
 		std::cout << "Shape: Do not set up VA repeatedly" << std::endl;
 		return;
 	}
-	m_VB = new Buffer;
-	m_VB->loadData(m_Buffer, m_VertexCount, m_VertexCount * m_Layout.stride());
+	m_VB = new Buffer(m_Buffer, m_VertexCount, m_VertexCount * m_Layout.stride());
 	m_VA.addBuffer(*m_VB, m_Layout);
 	delete[]m_Buffer;
 }

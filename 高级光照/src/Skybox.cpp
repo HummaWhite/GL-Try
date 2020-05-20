@@ -11,9 +11,10 @@ Skybox::~Skybox()
 void Skybox::loadSphere(const char* filePath, GLuint colorType)
 {
 	m_Type = SPHERE;
-	m_SkyboxTex.loadSingle(filePath, colorType);
+	m_SkyboxTex = new Texture;
+	m_SkyboxTex->loadSingle(filePath, colorType);
 	m_Shader.load("res/shader/skyboxSphere.shader");
-	m_Shader.setTexture("sky", m_SkyboxTex);
+	m_Shader.setTexture("sky", *m_SkyboxTex, 0);
 	m_Shape = new Sphere(30, 15, 1.0f, Shape::VERTEX);
 	m_Shape->setupVA();
 }

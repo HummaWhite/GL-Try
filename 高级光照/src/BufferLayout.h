@@ -21,6 +21,7 @@ private:
 	GLuint m_Stride;
 public:
 	BufferLayout() : m_Stride(0) {};
+	BufferLayout(std::vector<BufferElement> elements, GLuint stride) : m_Elements(elements), m_Stride(stride) {}
 	~BufferLayout() {};
 
 	std::vector<BufferElement> elements() const
@@ -72,4 +73,37 @@ public:
 		m_Elements.push_back({ T, count, normalized });
 		m_Stride += count * sizeofGLType(T);
 	}
+};
+
+const BufferLayout LAYOUT_POS3_UV2_NORM3 =
+{
+	{
+		{ GL_FLOAT, 3, false },
+		{ GL_FLOAT, 2, false },
+		{ GL_FLOAT, 3, false }
+	},
+	32
+};
+
+const BufferLayout LAYOUT_POS3_UV2_NORM3_TAN3 =
+{
+	{
+		{ GL_FLOAT, 3, false },
+		{ GL_FLOAT, 2, false },
+		{ GL_FLOAT, 3, false },
+		{ GL_FLOAT, 3, false }
+	},
+	44
+};
+
+const BufferLayout LAYOUT_POS3_UV2_NORM3_TAN3_BTN3 =
+{
+	{
+		{ GL_FLOAT, 3, false },
+		{ GL_FLOAT, 2, false },
+		{ GL_FLOAT, 3, false },
+		{ GL_FLOAT, 3, false },
+		{ GL_FLOAT, 3, false }
+	},
+	56
 };

@@ -1,5 +1,11 @@
 #include "VertexArray.h"
 
+VertexArray::VertexArray()
+	:m_VerticesCount(0)
+{
+	glCreateVertexArrays(1, &m_ID);
+}
+
 VertexArray::~VertexArray()
 {
 	glDeleteVertexArrays(1, &m_ID);
@@ -7,8 +13,6 @@ VertexArray::~VertexArray()
 
 void VertexArray::addBuffer(const Buffer& vb, const BufferLayout& layout)
 {
-	if (m_ID) return;
-	glCreateVertexArrays(1, &m_ID);
 	this->bind();
 	const auto& elements = layout.elements();
 	GLuint offset = 0;
