@@ -16,8 +16,8 @@ public:
 	void clearFrameBuffer(FrameBuffer& frameBuffer, float v0 = 1.0f, float v1 = 1.0f, float v2 = 1.0f, float v3 = 1.0f);
 	void draw(const VertexArray& va, const Buffer& eb, const Shader& shader, GLuint renderMode = GL_FILL) const;
 	void draw(const VertexArray& va, const Shader& shader, GLuint renderMode = GL_FILL) const;
-	void drawToFrameBuffer(const VertexArray& va, const Buffer& eb, const Shader& shader, const FrameBuffer& frameBuffer, GLuint renderMode = GL_FILL) const;
-	void drawToFrameBuffer(const VertexArray& va, const Shader& shader, const FrameBuffer& frameBuffer, GLuint renderMode = GL_FILL) const;
+	void drawToFrameBuffer(const FrameBuffer& frameBuffer, const VertexArray& va, const Buffer& eb, const Shader& shader, GLuint renderMode = GL_FILL) const;
+	void drawToFrameBuffer(const FrameBuffer& frameBuffer, const VertexArray& va, const Shader& shader, GLuint renderMode = GL_FILL) const;
 };
 
 static Renderer renderer;

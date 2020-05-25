@@ -32,7 +32,7 @@ void Renderer::draw(const VertexArray& va, const Shader& shader, GLuint renderMo
 	glDrawArrays(GL_TRIANGLES, 0, va.count());
 }
 
-void Renderer::drawToFrameBuffer(const VertexArray& va, const Buffer& eb, const Shader& shader, const FrameBuffer& frameBuffer, GLuint renderMode) const
+void Renderer::drawToFrameBuffer(const FrameBuffer& frameBuffer, const VertexArray& va, const Buffer& eb, const Shader& shader, GLuint renderMode) const
 {
 	frameBuffer.bind();
 
@@ -46,7 +46,7 @@ void Renderer::drawToFrameBuffer(const VertexArray& va, const Buffer& eb, const 
 	frameBuffer.unbind();
 }
 
-void Renderer::drawToFrameBuffer(const VertexArray& va, const Shader& shader, const FrameBuffer& frameBuffer, GLuint renderMode) const
+void Renderer::drawToFrameBuffer(const FrameBuffer& frameBuffer, const VertexArray& va, const Shader& shader, GLuint renderMode) const
 {
 	frameBuffer.bind();
 

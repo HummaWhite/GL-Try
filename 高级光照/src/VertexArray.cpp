@@ -13,7 +13,6 @@ VertexArray::~VertexArray()
 
 void VertexArray::addBuffer(const Buffer& vb, const BufferLayout& layout)
 {
-	this->bind();
 	const auto& elements = layout.elements();
 	GLuint offset = 0;
 	GLuint bindingIndex = 0;
@@ -30,7 +29,6 @@ void VertexArray::addBuffer(const Buffer& vb, const BufferLayout& layout)
 	}
 	glVertexArrayVertexBuffer(m_ID, bindingIndex, vb.ID(), 0, offset);
 	m_VerticesCount = vb.count();
-	this->unbind();
 }
 
 void VertexArray::bind() const

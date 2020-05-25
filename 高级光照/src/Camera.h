@@ -27,6 +27,7 @@ public:
 	void roll(float angle);
 	void rotate(glm::vec3 angle);
 	void changeFOV(float offset);
+	void lookAt(glm::vec3 pos);
 	void setPos(glm::vec3 pos) { m_Pos = pos; }
 	void setAngle(glm::vec3 angle) { m_Angle = angle; }
 	void setDir(glm::vec3 dir);

@@ -29,6 +29,7 @@ public:
 	void setProjection(const glm::mat4& projMatrix);
 	void setView(const glm::mat4& viewMatrix);
 	void draw();
+	void draw(const Texture& tex);
 
 	Texture& texture() { return *m_SkyboxTex; }
 

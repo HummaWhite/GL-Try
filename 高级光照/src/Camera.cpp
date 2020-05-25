@@ -66,6 +66,11 @@ void Camera::changeFOV(float offset)
 	if (m_FOV < 15.0) m_FOV = 15.0;
 }
 
+void Camera::lookAt(glm::vec3 pos)
+{
+	setDir(pos - m_Pos);
+}
+
 void Camera::setDir(glm::vec3 dir)
 {
 	dir = glm::normalize(dir);

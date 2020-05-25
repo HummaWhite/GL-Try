@@ -59,13 +59,13 @@ void FrameBuffer::detachTexture(GLenum attachment)
 
 bool FrameBuffer::checkComplete()
 {
-	this->bind();
-	if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
+	GLenum status = glCheckNamedFramebufferStatus(m_ID, GL_FRAMEBUFFER);
+	//std::cout << status << "\n";
+	if (status != GL_FRAMEBUFFER_COMPLETE)
 	{
 		std::cout << "Error: framebuffer not complete" << std::endl;
 		return false;
 	}
-	this->unbind();
 	return true;
 }
 

@@ -31,5 +31,12 @@ void Skybox::setView(const glm::mat4& viewMatrix)
 
 void Skybox::draw()
 {
+	m_Shader.setTexture("sky", *m_SkyboxTex, 0);
+	renderer.draw(m_Shape->VA(), m_Shader);
+}
+
+void Skybox::draw(const Texture& tex)
+{
+	m_Shader.setTexture("sky", tex, 0);
 	renderer.draw(m_Shape->VA(), m_Shader);
 }
