@@ -11,8 +11,14 @@ VertexArray::~VertexArray()
 	glDeleteVertexArrays(1, &m_ID);
 }
 
-void VertexArray::addBuffer(const Buffer& vb, const BufferLayout& layout)
+void VertexArray::addBuffer(const Buffer& vb, BufferLayout layout)
 {
+	addBuffer(&vb, layout);
+}
+
+void VertexArray::addBuffer(const Buffer* vb, BufferLayout layout)
+{
+	if (vb == nullptr) return;
 	const auto& elements = layout.elements();
 	GLuint offset = 0;
 	GLuint bindingIndex = 0;
@@ -25,10 +31,14 @@ void VertexArray::addBuffer(const Buffer& vb, const BufferLayout& layout)
 		bool normalized = elements[i].normalized;
 		glVertexArrayAttribFormat(m_ID, i, count, type, normalized, offset);
 		glVertexArrayAttribBinding(m_ID, i, bindingIndex);
-		offset += sizeofGLType(type) * count;
+		GLuint add = sizeofGLType(type) * count;
+		if (vb->batched()) add *= vb->elementsCount();
+		offset += add;
 	}
-	glVertexArrayVertexBuffer(m_ID, bindingIndex, vb.ID(), 0, offset);
-	m_VerticesCount = vb.count();
+
+	GLuint stride = vb->batched() ? 0 : layout.stride();
+	glVertexArrayVertexBuffer(m_ID, bindingIndex, vb->ID(), 0, stride);
+	m_VerticesCount = vb->elementsCount();
 }
 
 void VertexArray::bind() const

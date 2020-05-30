@@ -13,11 +13,13 @@ public:
 	VertexArray();
 	~VertexArray();
 
-	void addBuffer(const Buffer& vb, const BufferLayout& layout);
+	void addBuffer(const Buffer& vb, BufferLayout layout);
+	void addBuffer(const Buffer* vb, BufferLayout layout);
+
 	GLuint ID() const { return m_ID; }
 	void bind() const;
 	void unbind() const;
-	GLuint count() const { return m_VerticesCount; }
+	GLuint verticesCount() const { return m_VerticesCount; }
 
 private:
 	GLuint m_ID;

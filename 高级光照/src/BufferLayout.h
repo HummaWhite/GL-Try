@@ -19,19 +19,14 @@ class BufferLayout
 private:
 	std::vector<BufferElement> m_Elements;
 	GLuint m_Stride;
+
 public:
 	BufferLayout() : m_Stride(0) {};
 	BufferLayout(std::vector<BufferElement> elements, GLuint stride) : m_Elements(elements), m_Stride(stride) {}
 	~BufferLayout() {};
 
-	std::vector<BufferElement> elements() const
-	{
-		return m_Elements;
-	}
-	GLuint stride() const
-	{
-		return m_Stride;
-	}
+	std::vector<BufferElement> elements() const { return m_Elements; }
+	GLuint stride() const { return m_Stride; }
 
 	template<typename T>
 	void add(int count, bool normalized = GL_FALSE)

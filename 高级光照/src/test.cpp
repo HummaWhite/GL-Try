@@ -10,6 +10,7 @@
 #include "imgui/imgui_impl_glfw.h"
 #include "imgui/imgui_impl_opengl3.h"
 
+#include "Model.h"
 #include "Shader.h"
 #include "Buffer.h"
 #include "VertexArray.h"
@@ -225,11 +226,12 @@ int main()
     ordTex.loadSingle("res/texture/diamond_ore.png", GL_SRGB);
     shader.setTexture("ordTex", ordTex, ordTex.slot);
 
-    Buffer scrVb(SCREEN_COORD, 6, sizeof(SCREEN_COORD));
+    Buffer scrVB;
+    scrVB.allocate(sizeof(SCREEN_COORD), SCREEN_COORD, 6);
     BufferLayout scrLayout;
     scrLayout.add<float>(2);
-    VertexArray scrVa;
-    scrVa.addBuffer(scrVb, scrLayout);
+    VertexArray scrVA;
+    scrVA.addBuffer(scrVB, scrLayout);
 
     FrameBuffer scrFB;
     scrFB.generate(W_WIDTH, W_HEIGHT);
@@ -265,12 +267,15 @@ int main()
     float matAo(0.1f);
 
     int useTexture = 0;
-    int useNormalMap = 1;
-    int useReflMap = 1;
+    int useNormalMap = 0;
+    int useReflMap = 0;
     float reflStrength = 0.03f;
     int vaIndex = 0;
 
     VertexArray* va[] = { &cube.VA(), &sphere.VA(), &square.VA(), &bezier.VA(), &torus.VA(), &teapot.VA(), &teaspoon.VA() };
+
+    Model teapotModel;
+    teapotModel.loadModel("res/model/bunny.obj");
 
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
@@ -296,7 +301,6 @@ int main()
         float shadowFar = 50.0f;
         glm::mat4 shadowProj = glm::perspective(glm::radians(90.0f), aspect, shadowNear, shadowFar);
         glViewport(0, 0, SHADOW_RES, SHADOW_RES);
-        shadowShader.enable();
 
         for (int i = 0; i < pointLightCount; i++)
         {
@@ -309,7 +313,8 @@ int main()
             shadowTransforms.push_back(shadowProj * glm::lookAt(lightPos, lightPos + glm::vec3(0.0, 0.0, 1.0), glm::vec3(0.0, -1.0, 0.0)));
             shadowTransforms.push_back(shadowProj * glm::lookAt(lightPos, lightPos + glm::vec3(0.0, 0.0, -1.0), glm::vec3(0.0, -1.0, 0.0)));
 
-            renderer.clearFrameBuffer(depthBuffer[i], 0.0f, 0.0f, 0.0f);
+            depthBuffer[i].bind();
+            renderer.clear(0.0f, 0.0f, 0.0f);
             for (int i = 0; i < 6; i++)
                 shadowShader.setUniformMat4(("shadowMatrices[" + std::to_string(i) + "]").c_str(), shadowTransforms[i]);
             shadowShader.setUniform1f("farPlane", shadowFar);
@@ -322,18 +327,21 @@ int main()
                 model = glm::scale(model, glm::vec3(scale, scale, scale));
                 model = glm::rotate(model, glm::radians(timeValue * 30.0f * i + 20.0f * i), glm::vec3(1.0f, 0.3f, 0.5f));
                 shadowShader.setUniformMat4("model", model);
-                renderer.drawToFrameBuffer(depthBuffer[i], *va[vaIndex], shadowShader);
+                //renderer.draw(*va[vaIndex], shadowShader);
+                teapotModel.draw(shadowShader);
             }
-
+            //shadowShader.setUniformMat4("model", glm::rotate(glm::mat4(1.0f), glm::radians(90.0f), glm::vec3(1.0f, 0.0f, 0.0f)));
+            teapotModel.draw(shadowShader);
+            depthBuffer[i].unbind();
         }
 
         glViewport(0, 0, W_WIDTH, W_HEIGHT);
-        renderer.clearFrameBuffer(scrFB);
+        scrFB.bind();
+        renderer.clear();
         //light->attenuation.x = light->attenuation.y = 0;
         //light2->attenuation.x = light2->attenuation.y = 0;
         //light3->attenuation.x = light3->attenuation.y = 0;
 
-        shader.enable();
         shader.setUniformMat4("proj", proj);
         shader.setUniformMat4("view", camera.getViewMatrix());
         shader.setUniformVec3("viewPos", camera.pos());
@@ -364,18 +372,22 @@ int main()
             model = glm::scale(model, glm::vec3(scale, scale, scale));
             model = glm::rotate(model, glm::radians(timeValue * 30.0f * i + 20.0f * i), glm::vec3(1.0f, 0.3f, 0.5f));
             shader.useModelMatrix(model);
-            renderer.drawToFrameBuffer(scrFB, *va[vaIndex], shader);
+            //renderer.draw(*va[vaIndex], shader);
+            teapotModel.draw(shader);
         }
+        //shader.useModelMatrix(glm::rotate(glm::mat4(1.0f), glm::radians(90.0f), glm::vec3(1.0f, 0.0f, 0.0f)));
+        teapotModel.draw(shader);
 
         model = glm::mat4(1.0f);
         model = glm::translate(model, glm::vec3(0.0, 0.0, -5.0f));
         model = glm::scale(model, glm::vec3(40.0f, 40.0f, 40.0f));
         glm::vec3 wallColor(1.0f, 1.0f, 1.0f);
+        shader.setUniform1i("useReflMap", 0);
+        shader.setUniform1i("useNormalMap", 0);
         shader.useModelMatrix(model);
-        shader.setMaterial(wallColor, 0.0f, 1.0f, 0.0f);
-        renderer.drawToFrameBuffer(scrFB, square.VA(), shader);
+        shader.setMaterial(wallColor, 0.0f, 1.0f, 0.5f);
+        renderer.draw(square.VA(), shader);
 
-        lightShader.enable();
         lightShader.setUniformMat4("proj", proj);
         lightShader.setUniformMat4("view", camera.getViewMatrix());
         spotLight->pos = camera.pos();
@@ -386,10 +398,9 @@ int main()
             model = glm::translate(glm::mat4(1.0f), lights[i]->pos);
             lightShader.setUniformMat4("model", model);
             lightShader.setUniformVec3("lightColor", glm::length(lights[i]->color) * glm::normalize(lights[i]->color));
-            renderer.drawToFrameBuffer(scrFB, sphere.VA(), lightShader);
+            renderer.draw(sphere.VA(), lightShader);
         }
 
-        scrFB.bind();
         skybox.setProjection(proj);
         skybox.setView(glm::mat4(glm::mat3(camera.getViewMatrix())));
         skybox.draw();
@@ -400,7 +411,7 @@ int main()
         scrShader.setTexture("frameBuffer", FBTex, FBTex.slot);
         scrShader.setUniform1f("gamma", GAMMA);
         scrShader.setUniform1f("exposure", EXPOSURE);
-        renderer.draw(scrVa, scrShader);
+        renderer.draw(scrVA, scrShader);
 
         ImGui_ImplOpenGL3_NewFrame();
         ImGui_ImplGlfw_NewFrame();

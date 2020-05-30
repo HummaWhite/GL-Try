@@ -9,15 +9,33 @@
 
 #include "VertexArray.h"
 #include "Shader.h"
+#include "Renderer.h"
 
 class Mesh
 {
 public:
-	struct Vertex
+	struct POS3_UV2_NORM3
 	{
 		glm::vec3 pos;
-		glm::vec3 uv;
+		glm::vec2 uv;
 		glm::vec3 norm;
+	};
+
+	struct POS3_UV2_NORM3_TAN3
+	{
+		glm::vec3 pos;
+		glm::vec2 uv;
+		glm::vec3 norm;
+		glm::vec3 tan;
+	};
+
+	struct POS3_UV2_NORM3_TAN3_BTN3
+	{
+		glm::vec3 pos;
+		glm::vec2 uv;
+		glm::vec3 norm;
+		glm::vec3 tan;
+		glm::vec3 btn;
 	};
 
 	struct TextureMesh
@@ -26,13 +44,12 @@ public:
 		std::string type;
 	};
 
-	Mesh();
-	void loadMesh(std::vector<Vertex> vertices, std::vector<unsigned int> indices, std::vector<TextureMesh> textures, const BufferLayout& layout);
-	void setupMesh();
+	void loadMesh(const void* data, int count, std::vector<GLuint> indices, BufferLayout layout, bool batchedData = false);
+	void addTexture(TextureMesh* tex);
 	void draw(Shader& shader);
 
 private:
 	VertexArray m_VA;
 	Buffer m_VB, m_EB;
-	std::vector<TextureMesh> m_Textures;
+	std::vector<TextureMesh*> m_Textures;
 };

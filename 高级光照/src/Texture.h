@@ -4,7 +4,6 @@
 #include <vector>
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
-//#include "FrameBuffer.h"
 
 class Texture
 {

@@ -116,8 +116,9 @@ void Shape::setupVA()
 		std::cout << "Shape: Do not set up VA repeatedly" << std::endl;
 		return;
 	}
-	m_VB = new Buffer(m_Buffer, m_VertexCount, m_VertexCount * m_Layout.stride());
-	m_VA.addBuffer(*m_VB, m_Layout);
+	m_VB = new Buffer;
+	m_VB->allocate(m_VertexCount * m_Layout.stride(), m_Buffer, m_VertexCount);
+	m_VA.addBuffer(m_VB, m_Layout);
 	delete[]m_Buffer;
 }
 
