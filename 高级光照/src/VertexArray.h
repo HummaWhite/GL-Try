@@ -16,6 +16,9 @@ public:
 	void addBuffer(const Buffer& vb, BufferLayout layout);
 	void addBuffer(const Buffer* vb, BufferLayout layout);
 
+	void attachElementBuffer(const Buffer& eb);
+	void detachElementBuffer();
+
 	GLuint ID() const { return m_ID; }
 	void bind() const;
 	void unbind() const;

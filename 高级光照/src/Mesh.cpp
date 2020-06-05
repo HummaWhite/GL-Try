@@ -8,6 +8,10 @@ void Mesh::loadMesh(const void* data, int count, std::vector<GLuint> indices, Bu
 	m_EB.allocate(indices.size() * sizeof(GLuint), &indices[0], indices.size());
 }
 
+void Mesh::loadShape(Shape* shape)
+{
+}
+
 void Mesh::addTexture(TextureMesh* tex)
 {
 	m_Textures.push_back(tex);
@@ -15,5 +19,6 @@ void Mesh::addTexture(TextureMesh* tex)
 
 void Mesh::draw(Shader& shader)
 {
-	renderer.draw(m_VA, m_EB, shader);
+	if (!m_EB.ID()) renderer.draw(m_VA, shader);
+	else renderer.draw(m_VA, m_EB, shader);
 }

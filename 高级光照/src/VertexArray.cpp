@@ -41,6 +41,16 @@ void VertexArray::addBuffer(const Buffer* vb, BufferLayout layout)
 	m_VerticesCount = vb->elementsCount();
 }
 
+void VertexArray::attachElementBuffer(const Buffer& eb)
+{
+	glVertexArrayElementBuffer(m_ID, eb.ID());
+}
+
+void VertexArray::detachElementBuffer()
+{
+	glVertexArrayElementBuffer(m_ID, 0);
+}
+
 void VertexArray::bind() const
 {
 	glBindVertexArray(m_ID);

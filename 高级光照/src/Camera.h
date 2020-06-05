@@ -11,7 +11,7 @@
 const float CAMERA_ROTATE_SENSITIVITY = 0.05f;
 const float CAMERA_MOVE_SENSITIVITY = 0.1f;
 const float CAMERA_ROLL_SENSITIVITY = 0.05f;
-const float CAMERA_FOV_SENSITIVITY = 5.0f;
+const float CAMERA_FOV_SENSITIVITY = 150.0f;
 const float CAMERA_PITCH_LIMIT = 88.0f;
 const float CAMERA_FOV = 45.0f;
 const glm::vec3 VEC_UP = glm::vec3(0.0f, 0.0f, 1.0f);
@@ -29,7 +29,7 @@ public:
 	void changeFOV(float offset);
 	void lookAt(glm::vec3 pos);
 	void setPos(glm::vec3 pos) { m_Pos = pos; }
-	void setAngle(glm::vec3 angle) { m_Angle = angle; }
+	void setAngle(glm::vec3 angle) { m_Angle = glm::radians(angle); }
 	void setDir(glm::vec3 dir);
 
 	float FOV() const { return m_FOV; }

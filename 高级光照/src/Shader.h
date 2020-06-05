@@ -31,7 +31,6 @@ public:
 	void setTexture(const char* name, const Texture& tex, int unit) const;
 	void setLight(const LightGroup& lightGroup);
 	void setMaterial(const glm::vec3& albedo, float metallic, float roughness, float ao);
-	void useModelMatrix(const glm::mat4& model);
 	static GLint getUniformLocation(GLuint programID, const char* name);
 private:
 	void compileShader(const char* vertexSource, const char* fragmentSource, const char* geometrySource);

@@ -56,6 +56,8 @@ void Shader::load(const char* filePath)
 
 	const char* geometry = (includeGeomeryCode && (geometryCode != "")) ? geometryCode.c_str() : nullptr;
 	compileShader(vertexCode.c_str(), fragmentCode.c_str(), geometry);
+
+	std::cout << "Done" << std::endl;
 }
 
 Shader::~Shader()
@@ -171,13 +173,6 @@ void Shader::setMaterial(const glm::vec3& albedo, float metallic, float roughnes
 	setUniform1f("material.ao", ao);
 }
 
-void Shader::useModelMatrix(const glm::mat4& model)
-{
-	setUniformMat4("model", model);
-	glm::mat3 modelInv = glm::mat3(glm::transpose(glm::inverse(model)));
-	setUniformMat3("modelInv", modelInv);
-}
-
 GLint Shader::getUniformLocation(GLuint programID, const char* name)
 {
 	GLint location = glGetUniformLocation(programID, name);
@@ -226,6 +221,4 @@ void Shader::compileShader(const char* vertexSource, const char* fragmentSource,
 	glDeleteShader(fragmentShader);
 	if (geometrySource != nullptr)
 		glDeleteShader(geometryShader);
-
-	std::cout << "done" << std::endl;
 }

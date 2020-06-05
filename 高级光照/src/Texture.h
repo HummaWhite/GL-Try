@@ -17,6 +17,7 @@ public:
 	int height() const { return m_Height; }
 
 	void generate2D(int width, int height, GLuint format, GLuint filterType = GL_LINEAR);
+	void generateDepth2D(int width, int height, GLuint filterType = GL_LINEAR);
 	void generateCube(int width, GLuint format, GLuint filterType = GL_LINEAR);
 	void generateDepthCube(int width, GLuint filterType = GL_NEAREST);
 	void loadSingle(const std::string& filePath, GLuint internalFormat = GL_RGBA, GLuint filterType = GL_LINEAR);

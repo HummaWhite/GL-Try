@@ -4,7 +4,7 @@
 #include <Windows.h>
 #include "wglext.h"
 
-bool WGLExtensionSupported(const char* extension_name)
+static bool WGLExtensionSupported(const char* extension_name)
 {
     // this is pointer to function which returns pointer to string with list of all wgl extensions
     PFNWGLGETEXTENSIONSSTRINGEXTPROC _wglGetExtensionsStringEXT = NULL;
@@ -22,7 +22,7 @@ bool WGLExtensionSupported(const char* extension_name)
     return true;
 }
 
-void VerticalSyncStatus(bool status)
+static void VerticalSyncStatus(bool status)
 {
     PFNWGLSWAPINTERVALEXTPROC       wglSwapIntervalEXT = NULL;
     PFNWGLGETSWAPINTERVALEXTPROC    wglGetSwapIntervalEXT = NULL;

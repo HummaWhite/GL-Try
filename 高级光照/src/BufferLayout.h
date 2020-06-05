@@ -70,6 +70,14 @@ public:
 	}
 };
 
+const BufferLayout LAYOUT_POS2 =
+{
+	{
+		{ GL_FLOAT, 2, false }
+	},
+	8
+};
+
 const BufferLayout LAYOUT_POS3_UV2_NORM3 =
 {
 	{
