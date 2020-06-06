@@ -20,12 +20,12 @@ private:
 	void renderLoop();
 	void terminate();
 
-	void resizeWindow();
 	void resetScreenBuffer(int width, int height);
 
-	void processKey();
-	void processCursor();
-	void processScroll();
+	void processKey(int key, int scancode, int action, int mode);
+	void processCursor(float posX, float posY);
+	void processScroll(float offsetX, float offsetY);
+	void processResize(int width, int height);
 
 	void setupFrameBuffersAndTextures();
 	void setupLights();
@@ -76,4 +76,10 @@ private:
 	float matMetallic;
 	float matRoughness;
 	float matAo;
+
+private:
+	bool cursorDisabled;
+	float lastCursorX, lastCursorY;
+	bool firstCursorMove;
+	bool F1Pressed;
 };

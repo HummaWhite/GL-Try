@@ -57,10 +57,7 @@ void EngineBase::setupGL(int width, int height)
 
     this->setViewport(0, 0, m_WindowWidth, m_WindowHeight);
 
-    glfwSetWindowSizeCallback(this->m_Window, Inputs::windowSizeCallback);
-    glfwSetCursorPosCallback(this->m_Window, Inputs::cursorPosCallback);
-    glfwSetScrollCallback(this->m_Window, Inputs::scrollCallback);
-    glfwSetKeyCallback(this->m_Window, Inputs::keyCallback);
+    glfwSetInputMode(this->window(), GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 }
 
 void EngineBase::setTerminateStatus(bool status)

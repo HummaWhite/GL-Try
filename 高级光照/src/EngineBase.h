@@ -3,6 +3,7 @@
 #include <iostream>
 #include <string>
 #include <ctime>
+#include <map>
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 #include <glm/glm.hpp>
@@ -27,7 +28,6 @@
 #include "Skybox.h"
 #include "CheckError.h"
 #include "ShadowMap.h"
-#include "Inputs.h"
 
 class EngineBase
 {
@@ -37,7 +37,7 @@ public:
 
 	int run();
 	void setViewport(int x, int y, int width, int height);
-	virtual void resizeWindow(int width, int height);
+	void resizeWindow(int width, int height);
 
 	int windowWidth() const { return m_WindowWidth; }
 	int windowHeight() const { return m_WindowHeight; }
@@ -46,18 +46,21 @@ public:
 	bool shouldTerminate() const { return m_ShouldTerminate; }
 	void setTerminateStatus(bool status);
 
+	virtual void processKey(int key, int scancode, int action, int mode) = 0;
+	virtual void processCursor(float posX, float posY) = 0;
+	virtual void processScroll(float offsetX, float offsetY) = 0;
+	virtual void processResize(int width, int height) = 0;
+
+	int getKeyStatus(int key) { return glfwGetKey(m_Window, key); }
+
+	void error(const char* errString);
+
 private:
 	void setupGL(int width, int height);
 
 	virtual void init() = 0;
 	virtual void renderLoop() = 0;
 	virtual void terminate() = 0;
-
-	void error(const char* errString);
-
-	virtual void processKey() = 0;
-	virtual void processCursor() = 0;
-	virtual void processScroll() = 0;
 
 private:
 	GLFWwindow* m_Window;

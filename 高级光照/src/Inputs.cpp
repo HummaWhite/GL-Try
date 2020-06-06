@@ -2,50 +2,47 @@
 
 namespace Inputs
 {
+    EngineBase* bindingEngine = nullptr;
+
     void windowSizeCallback(GLFWwindow* window, int width, int height)
     {
-        curWindowWidth = width;
-        curWindowHeight = height;
+        if (bindingEngine == nullptr) return;
+        bindingEngine->resizeWindow(width, height);
     }
 
     void cursorPosCallback(GLFWwindow* window, double xpos, double ypos)
     {
-        if (!cursorDisabled) return;
-        if (firstCursorMove == 1)
-        {
-            lastCursorX = xpos;
-            lastCursorY = ypos;
-            firstCursorMove = 0;
-            return;
-        }
-        lastCursorX = xpos;
-        lastCursorY = ypos;
-        cursorX = xpos;
-        cursorY = ypos;
+        if (bindingEngine == nullptr) return;
+        bindingEngine->processCursor(xpos, ypos);
     }
 
     void scrollCallback(GLFWwindow* window, double xoffset, double yoffset)
     {
-        scrollOffset = yoffset;
+        if (bindingEngine == nullptr) return;
+        bindingEngine->processScroll(xoffset, yoffset);
     }
 
     void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mode)
     {
-        if (glfwGetKey(window, GLFW_KEY_F1) == GLFW_PRESS)
+        if (bindingEngine == nullptr) return;
+        bindingEngine->processKey(key, scancode, action, mode);
+    }
+
+    void bindEngine(EngineBase* engine)
+    {
+        bindingEngine = engine;
+    }
+
+    void setup()
+    {
+        if (bindingEngine == nullptr)
         {
-            F1Pressed = 1;
+            std::cout << "Error: No binding engine for Input" << std::endl;
+            return;
         }
-        if (glfwGetKey(window, GLFW_KEY_F1) == GLFW_RELEASE)
-        {
-            if (F1Pressed)
-            {
-                if (cursorDisabled)
-                    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
-                else
-                    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-                cursorDisabled ^= 1;
-                F1Pressed = 0;
-            }
-        }
+        glfwSetWindowSizeCallback(bindingEngine->window(), Inputs::windowSizeCallback);
+        glfwSetCursorPosCallback(bindingEngine->window(), Inputs::cursorPosCallback);
+        glfwSetScrollCallback(bindingEngine->window(), Inputs::scrollCallback);
+        //glfwSetKeyCallback(bindingEngine->window(), Inputs::keyCallback);
     }
 }

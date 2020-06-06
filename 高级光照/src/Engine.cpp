@@ -17,7 +17,12 @@ Engine::Engine(int width, int height) :
     matAlbedo(1.0f, 1.0f, 1.0f),
     matMetallic(0.75f),
     matRoughness(0.2f),
-    matAo(0.1f)
+    matAo(0.1f),
+    cursorDisabled(true),
+    lastCursorX(this->windowWidth() / 2),
+    lastCursorY(this->windowHeight() / 2),
+    firstCursorMove(true),
+    F1Pressed(false)
 {
 }
 
@@ -43,10 +48,7 @@ void Engine::init()
 
 void Engine::renderLoop()
 {
-    //this->resizeWindow();
-    this->processCursor();
-    this->processScroll();
-    this->processKey();
+    this->processKey(0, 0, 0, 0);
 
     renderer.clear(0.0f, 0.0f, 0.0f);
 
@@ -82,15 +84,6 @@ void Engine::terminate()
     ImGui::DestroyContext();
 }
 
-void Engine::resizeWindow()
-{
-    int width = Inputs::curWindowWidth;
-    int height = Inputs::curWindowHeight;
-    std::cout << width << " " << height << std::endl;
-    this->EngineBase::resizeWindow(width, height);
-    this->resetScreenBuffer(width, height);
-}
-
 void Engine::resetScreenBuffer(int width, int height)
 {
     if (screenFB != nullptr)
@@ -110,44 +103,76 @@ void Engine::resetScreenBuffer(int width, int height)
     screenFB->attachTexture(GL_COLOR_ATTACHMENT0, *screenFBTex);
 }
 
-void Engine::processKey()
+void Engine::processKey(int key, int scancode, int action, int mode)
 {
-    if (glfwGetKey(this->window(), GLFW_KEY_ESCAPE) == GLFW_PRESS)
+    if (this->getKeyStatus(GLFW_KEY_ESCAPE) == GLFW_PRESS)
     {
         glfwSetWindowShouldClose(this->window(), true);
         this->setTerminateStatus(true);
     }
-    if (glfwGetKey(this->window(), GLFW_KEY_W) == GLFW_PRESS)
+    if (this->getKeyStatus(GLFW_KEY_W) == GLFW_PRESS)
         camera.move(GLFW_KEY_W);
-    if (glfwGetKey(this->window(), GLFW_KEY_S) == GLFW_PRESS)
+    if (this->getKeyStatus(GLFW_KEY_S) == GLFW_PRESS)
         camera.move(GLFW_KEY_S);
-    if (glfwGetKey(this->window(), GLFW_KEY_A) == GLFW_PRESS)
+    if (this->getKeyStatus(GLFW_KEY_A) == GLFW_PRESS)
         camera.move(GLFW_KEY_A);
-    if (glfwGetKey(this->window(), GLFW_KEY_D) == GLFW_PRESS)
+    if (this->getKeyStatus(GLFW_KEY_D) == GLFW_PRESS)
         camera.move(GLFW_KEY_D);
-    if (glfwGetKey(this->window(), GLFW_KEY_Q) == GLFW_PRESS)
+    if (this->getKeyStatus(GLFW_KEY_Q) == GLFW_PRESS)
         camera.move(GLFW_KEY_Q);
-    if (glfwGetKey(this->window(), GLFW_KEY_E) == GLFW_PRESS)
+    if (this->getKeyStatus(GLFW_KEY_E) == GLFW_PRESS)
         camera.move(GLFW_KEY_E);
-    if (glfwGetKey(this->window(), GLFW_KEY_R) == GLFW_PRESS)
+    if (this->getKeyStatus(GLFW_KEY_R) == GLFW_PRESS)
         camera.move(GLFW_KEY_R);
-    if (glfwGetKey(this->window(), GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS)
+    if (this->getKeyStatus(GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS)
         camera.move(GLFW_KEY_LEFT_SHIFT);
-    if (glfwGetKey(this->window(), GLFW_KEY_SPACE) == GLFW_PRESS)
+    if (this->getKeyStatus(GLFW_KEY_SPACE) == GLFW_PRESS)
         camera.move(GLFW_KEY_SPACE);
+
+    if (this->getKeyStatus(GLFW_KEY_F1) == GLFW_PRESS) F1Pressed = true;
+    if (this->getKeyStatus(GLFW_KEY_F1) == GLFW_RELEASE)
+    {
+        if (F1Pressed)
+        {
+            if (cursorDisabled)
+                glfwSetInputMode(this->window(), GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+            else
+                glfwSetInputMode(this->window(), GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+            cursorDisabled ^= 1;
+            F1Pressed = false;
+        }
+    }
 }
 
-void Engine::processCursor()
+void Engine::processCursor(float posX, float posY)
 {
-    float offsetX = (Inputs::cursorX - Inputs::lastCursorX) * CAMERA_ROTATE_SENSITIVITY;
-    float offsetY = (Inputs::cursorY - Inputs::lastCursorY) * CAMERA_ROTATE_SENSITIVITY;
+    if (!cursorDisabled) return;
+    if (firstCursorMove == 1)
+    {
+        lastCursorX = posX;
+        lastCursorY = posY;
+        firstCursorMove = false;
+        return;
+    }
+
+    float offsetX = (posX - lastCursorX) * CAMERA_ROTATE_SENSITIVITY;
+    float offsetY = (posY - lastCursorY) * CAMERA_ROTATE_SENSITIVITY;
     glm::vec3 offset = glm::vec3(-offsetX, -offsetY, 0);
     camera.rotate(offset);
+
+    lastCursorX = posX;
+    lastCursorY = posY;
 }
 
-void Engine::processScroll()
+void Engine::processScroll(float offsetX, float offsetY)
 {
-    camera.changeFOV(Inputs::scrollOffset);
+    camera.changeFOV(offsetY);
+}
+
+void Engine::processResize(int width, int height)
+{
+    this->resizeWindow(width, height);
+    this->resetScreenBuffer(width, height);
 }
 
 void Engine::setupFrameBuffersAndTextures()
@@ -197,7 +222,7 @@ void Engine::setupShaders()
     skyboxShader.load("res/shader/skyboxSphere.shader");
     shader.load("res/shader/PBR.shader");
     scrShader.load("res/shader/frameBuffer.shader");
-    shadowShader.load("res/shader/shadow.shader");
+    shadowShader.load("res/shader/shadowMapPoint.shader");
     zShader.load("res/shader/Zpass.shader");
 }
 
