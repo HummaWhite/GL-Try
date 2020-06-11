@@ -2,7 +2,6 @@
 
 #include "EngineBase.h"
 
-const int SHADOW_RES = 1024;
 const float SHADOW_FARPLANE = 50.0f;
 const float SHADOW_NEARPLANE = 0.1f;
 const float PREZ_FARPLANE = 100.0f;
@@ -54,28 +53,30 @@ private:
 	Buffer screenVB;
 	VertexArray screenVA;
 
-	FrameBuffer ZBuffer;
-	Texture ZBufferTex;
+	FrameBuffer* ZBuffer;
+	Texture* ZBufferTex;
 
 	Shape* square;
 	Shape* sphere;
 	Model bunny, nano;
 
 private:
-	int verticalSync;
+	bool verticalSync;
 	float gamma;
 	float exposure;
-	int shadowOn;
+	bool shadowOn;
 
-	int useTexture;
-	int useNormalMap;
-	int useReflMap;
+	bool useTexture;
+	bool useNormalMap;
+	bool useReflMap;
 	float reflStrength;
 
 	glm::vec3 matAlbedo;
 	float matMetallic;
 	float matRoughness;
 	float matAo;
+
+	bool enablePreZCull;
 
 private:
 	bool cursorDisabled;

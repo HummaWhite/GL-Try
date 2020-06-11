@@ -7,7 +7,7 @@ namespace Inputs
     void windowSizeCallback(GLFWwindow* window, int width, int height)
     {
         if (bindingEngine == nullptr) return;
-        bindingEngine->resizeWindow(width, height);
+        bindingEngine->processResize(width, height);
     }
 
     void cursorPosCallback(GLFWwindow* window, double xpos, double ypos)
@@ -40,9 +40,9 @@ namespace Inputs
             std::cout << "Error: No binding engine for Input" << std::endl;
             return;
         }
-        glfwSetWindowSizeCallback(bindingEngine->window(), Inputs::windowSizeCallback);
-        glfwSetCursorPosCallback(bindingEngine->window(), Inputs::cursorPosCallback);
-        glfwSetScrollCallback(bindingEngine->window(), Inputs::scrollCallback);
-        //glfwSetKeyCallback(bindingEngine->window(), Inputs::keyCallback);
+        glfwSetWindowSizeCallback(bindingEngine->window(), windowSizeCallback);
+        glfwSetCursorPosCallback(bindingEngine->window(), cursorPosCallback);
+        glfwSetScrollCallback(bindingEngine->window(), scrollCallback);
+        //glfwSetKeyCallback(bindingEngine->window(), keyCallback);
     }
 }

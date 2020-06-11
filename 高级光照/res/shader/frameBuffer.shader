@@ -13,7 +13,7 @@ void main()
 //$Fragment
 #version 450 core
 in vec2 texCoord;
-out vec4 fragColor;
+out vec4 FragColor;
 
 const vec3 BRIGHT_VEC = vec3(0.2126, 0.7152, 0.0722);
 
@@ -29,7 +29,7 @@ void main()
 	float centerBrightness = dot(texture(frameBuffer, vec2(0.5, 0.5)).rgb, BRIGHT_VEC);
 	vec3 mapped = vec3(1.0) - exp(-color * exposure);
 	mapped = pow(mapped, vec3(1.0 / gamma));
-	fragColor = vec4(mapped, 1.0);
+	FragColor = vec4(mapped, 1.0);
 }
 //texPos = floor(texPos * 128) / 128;
 //fragColor = floor(fragColor * 8) / 8;

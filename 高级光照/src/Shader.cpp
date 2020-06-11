@@ -51,7 +51,7 @@ void Shader::load(const char* filePath)
 	catch (const char* err)
 	{
 		std::cout << err << std::endl;
-		return;
+		exit(-1);
 	}
 
 	const char* geometry = (includeGeomeryCode && (geometryCode != "")) ? geometryCode.c_str() : nullptr;
@@ -157,6 +157,8 @@ void Shader::setLight(const LightGroup& lightGroup)
 			setUniformVec3(tmp, light->attenuation);
 			sprintf(tmp, "pointLights[%d].strength", pointCount);
 			setUniform1f(tmp, light->strength);
+			sprintf(tmp, "pointLights[%d].size", pointCount);
+			setUniform1f(tmp, light->size);
 			pointCount++;
 			break;
 		}
@@ -214,7 +216,7 @@ void Shader::compileShader(const char* vertexSource, const char* fragmentSource,
 		char info[512];
 		glGetProgramInfoLog(m_ID, 512, NULL, info);
 		std::cout << info << std::endl;
-		return;
+		exit(-1);
 	}
 
 	glDeleteShader(vertexShader);

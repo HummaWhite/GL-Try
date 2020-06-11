@@ -74,7 +74,7 @@ void EngineBase::error(const char* errString)
 
 void EngineBase::resizeWindow(int width, int height)
 {
-    glfwSetWindowSize(this->m_Window, width, height);
+    //glfwSetWindowSize(this->m_Window, width, height);
     this->m_WindowWidth = width;
     this->m_WindowHeight = height;
 }

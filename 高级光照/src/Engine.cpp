@@ -22,7 +22,8 @@ Engine::Engine(int width, int height) :
     lastCursorX(this->windowWidth() / 2),
     lastCursorY(this->windowHeight() / 2),
     firstCursorMove(true),
-    F1Pressed(false)
+    F1Pressed(false),
+    enablePreZCull(true)
 {
 }
 
@@ -37,8 +38,8 @@ void Engine::init()
     glEnable(GL_DEPTH_TEST);
     glDepthFunc(GL_LEQUAL);
 
-    this->setupFrameBuffersAndTextures();
     this->setupLights();
+    this->setupFrameBuffersAndTextures();
     this->setupObjects();
     this->setupShaders();
     this->setupGUI();
@@ -52,11 +53,9 @@ void Engine::renderLoop()
 
     renderer.clear(0.0f, 0.0f, 0.0f);
 
-    this->setViewport(0, 0, SHADOW_RES, SHADOW_RES);
     if (shadowOn) this->shadowPass(shadowMapPoint, lights, objects);
 
-    this->setViewport(0, 0, this->windowWidth(), this->windowHeight());
-    this->ZPass(ZBuffer, objects);
+    this->ZPass(*ZBuffer, objects);
 
     this->renderPass();
 
@@ -77,6 +76,8 @@ void Engine::terminate()
         delete screenFB;
         delete screenRB;
         delete screenFBTex;
+        delete ZBuffer;
+        delete ZBufferTex;
     }
 
     ImGui_ImplOpenGL3_Shutdown();
@@ -91,16 +92,25 @@ void Engine::resetScreenBuffer(int width, int height)
         delete screenFB;
         delete screenRB;
         delete screenFBTex;
+        delete ZBuffer;
+        delete ZBufferTex;
     }
     screenFB = new FrameBuffer;
     screenRB = new RenderBuffer;
     screenFBTex = new Texture;
+    ZBuffer = new FrameBuffer;
+    ZBufferTex = new Texture;
 
-    screenFB->generate(this->windowWidth(), this->windowHeight());
-    screenRB->allocate(GL_DEPTH24_STENCIL8, this->windowWidth(), this->windowHeight());
-    screenFBTex->generate2D(this->windowWidth(), this->windowHeight(), GL_RGB16F);
+    screenFB->generate(width, height);
+    screenRB->allocate(GL_DEPTH24_STENCIL8, width, height);
+    screenFBTex->generate2D(width, height, GL_RGB16F);
     screenFB->attachRenderBuffer(GL_DEPTH_STENCIL_ATTACHMENT, *screenRB);
     screenFB->attachTexture(GL_COLOR_ATTACHMENT0, *screenFBTex);
+
+    ZBuffer->generate(width, height);
+    ZBufferTex->generateDepth2D(width, height, GL_DEPTH_COMPONENT32F);
+    ZBuffer->attachTexture(GL_DEPTH_ATTACHMENT, *ZBufferTex);
+    ZBuffer->activateAttachmentTargets({ GL_NONE });
 }
 
 void Engine::processKey(int key, int scancode, int action, int mode)
@@ -177,12 +187,12 @@ void Engine::processResize(int width, int height)
 
 void Engine::setupFrameBuffersAndTextures()
 {
-    for (int i = 0; i < LIGHT_COUNT; i++)
+    for (int i = 0; i < lights.size(); i++)
     {
-        shadowMapPoint[i].init(ShadowMap::POINT, SHADOW_RES);
+        shadowMapPoint[i].init(ShadowMap::POINT, 1024, GL_DEPTH_COMPONENT32F);
     }
 
-    resetScreenBuffer(this->windowWidth(), this->windowHeight());
+    this->resetScreenBuffer(this->windowWidth(), this->windowHeight());
 }
 
 void Engine::setupLights()
@@ -201,11 +211,11 @@ void Engine::setupObjects()
     screenVA.addBuffer(screenVB, LAYOUT_POS2);
 
     bunny.loadModel("res/model/bunny.obj");
-    bunny.setPos(glm::vec3(0.0f, 0.0f, 9.0f));
+    bunny.setPos(glm::vec3(0.0f, 0.0f, 8.0f));
     objects.push_back(&bunny);
 
     nano.loadModel("res/model/nanosuit/nanosuit.obj");
-    nano.setPos(glm::vec3(2.0f, 0.0f, -4.0f));
+    nano.setPos(glm::vec3(2.0f, 0.0f, -5.0f));
     objects.push_back(&nano);
 
     square = new Square();
@@ -238,6 +248,8 @@ void Engine::setupGUI()
 
 void Engine::ZPass(FrameBuffer& zBuffer, std::vector<Model*> objects)
 {
+    this->setViewport(0, 0, this->windowWidth(), this->windowHeight());
+
     glm::mat4 proj = glm::perspective(glm::radians(camera.FOV()), (float)this->windowWidth() / (float)this->windowHeight(), 0.1f, 100.0f);
     glm::mat4 view = camera.getViewMatrix();
 
@@ -271,12 +283,15 @@ void Engine::shadowPass(ShadowMap* shadowMaps, std::vector<Light*>& lights, std:
         shadowTransforms[5] = shadowProj * glm::lookAt(lightPos, lightPos + glm::vec3(0.0, 0.0, -1.0), glm::vec3(0.0, -1.0, 0.0));
 
         shadowMaps[i].bind();
+
+        this->setViewport(0, 0, shadowMaps[i].size(), shadowMaps[i].size());
         renderer.clear(0.0f, 0.0f, 0.0f);
+
+        shadowShader.setUniformVec3("lightPos", lightPos);
         for (int i = 0; i < 6; i++)
         {
             shadowShader.setUniformMat4(("shadowMatrices[" + std::to_string(i) + "]").c_str(), shadowTransforms[i]);
         }
-        shadowShader.setUniformVec3("lightPos", lightPos);
 
         for (auto i : objects) i->draw(shadowShader);
 
@@ -288,10 +303,14 @@ void Engine::renderPass()
 {
     screenFB->bind();
 
+    this->setViewport(0, 0, this->windowWidth(), this->windowHeight());
     renderer.clear(0.0, 0.0, 0.0);
     glm::mat4 proj = glm::perspective(glm::radians(camera.FOV()), (float)this->windowWidth() / (float)this->windowHeight(), 0.1f, 100.0f);
+    glm::mat4 view = camera.getViewMatrix();
+
+    shader.setUniform2f("viewport", this->windowWidth(), this->windowHeight());
     shader.setUniformMat4("proj", proj);
-    shader.setUniformMat4("view", camera.getViewMatrix());
+    shader.setUniformMat4("view", view);
     shader.setUniformVec3("viewPos", camera.pos());
     shader.setUniform1f("normDir", 1.0);
     shader.setLight(lights);
@@ -305,10 +324,15 @@ void Engine::renderPass()
     shader.setUniform1i("useReflMap", useReflMap);
     shader.setUniform1f("material.reflStrength", reflStrength);
     shader.setUniform1i("shadowOn", shadowOn);
+
+    shader.setTexture("preZTex", *ZBufferTex, 16);
+    shader.setUniform1f("preZFarPlane", PREZ_FARPLANE);
+    shader.setUniform1i("enablePreZCull", enablePreZCull);
+
     for (int i = 0; i < lights.size(); i++)
     {
         shadowMapPoint[i].linkTextureUnit(i + 8);
-        shader.setUniform1i(("depthMapPoint[" + std::to_string(i) + "]").c_str(), i + 8);
+        shader.setUniform1i(("shadowMapPoint[" + std::to_string(i) + "]").c_str(), i + 8);
     }
     shader.setUniform1f("shadowFarPlane", SHADOW_FARPLANE);
 
@@ -330,20 +354,23 @@ void Engine::renderPass()
     for (int i = 0; i < lights.size(); i++)
     {
         model = glm::translate(glm::mat4(1.0f), lights[i]->pos);
+        model = glm::scale(model, glm::vec3(lights[i]->size));
         lightShader.setUniformMat4("model", model);
         lightShader.setUniformVec3("lightColor", glm::length(lights[i]->color) * glm::normalize(lights[i]->color));
         renderer.draw(sphere->VA(), lightShader);
     }
 
-    //skybox.setProjection(proj);
-    //skybox.setView(glm::mat4(glm::mat3(camera.getViewMatrix())));
-    //skybox.draw();
+    /*skybox.setProjection(proj);
+    skybox.setView(glm::mat4(glm::mat3(camera.getViewMatrix())));
+    skybox.draw();*/
     screenFB->unbind();
 }
 
 void Engine::postPass()
 {
+    this->setViewport(0, 0, this->windowWidth(), this->windowHeight());
     renderer.clear();
+    //scrShader.setTexture("frameBuffer", *ZBufferTex, 12);
     scrShader.setTexture("frameBuffer", *screenFBTex, screenFBTex->slot);
     scrShader.setUniform1f("gamma", gamma);
     scrShader.setUniform1f("exposure", exposure);
@@ -362,24 +389,28 @@ void Engine::renderGUI()
             ImGui::ColorEdit3("Color0", (float*)&lights[0]->color);
             ImGui::SliderFloat3("Pos0", (float*)&lights[0]->pos, -20.0f, 20.0f);
             ImGui::SliderFloat("Strength", &lights[0]->strength, 0.1f, 100.0f);
+            ImGui::SliderFloat("Size0", &lights[0]->size, 0.01f, 1.0f);
             ImGui::Text("Light1");
             ImGui::ColorEdit3("Color1", (float*)&lights[1]->color);
+            ImGui::SliderFloat("Size1", &lights[1]->size, 0.01f, 1.0f);
             ImGui::SliderFloat3("Pos1", (float*)&lights[1]->pos, -20.0f, 20.0f);
             ImGui::Text("Light2");
             ImGui::ColorEdit3("Color2", (float*)&lights[2]->color);
+            ImGui::SliderFloat("Size2", &lights[2]->size, 0.01f, 1.0f);
             ImGui::SliderFloat3("Pos2", (float*)&lights[2]->pos, -20.0f, 20.0f);
-            ImGui::SliderInt("Vertical Sync", &verticalSync, 0, 1);
+            ImGui::Checkbox("Vertical Sync", &verticalSync);
             ImGui::ColorEdit3("Albedo", (float*)&matAlbedo);
             ImGui::SliderFloat("Metallic", &matMetallic, 0.0f, 1.0f);
             ImGui::SliderFloat("Roughness", &matRoughness, 0.0f, 1.0f);
             ImGui::SliderFloat("Ao", &matAo, 0.0f, 1.0f);
-            ImGui::SliderInt("Shadow On", &shadowOn, 0, 1);
-            ImGui::SliderInt("Texture on", &useTexture, 0, 1);
-            ImGui::SliderInt("NormalMap on", &useNormalMap, 0, 1);
-            ImGui::SliderInt("ReflMap on", &useReflMap, 0, 1);
+            ImGui::Checkbox("Shadow", &shadowOn);
+            ImGui::Checkbox("Texture", &useTexture);
+            ImGui::Checkbox("NormalMap", &useNormalMap);
+            ImGui::Checkbox("ReflMap", &useReflMap);
             ImGui::SliderFloat("ReflStrength", &reflStrength, 0.0f, 1.0f);
             ImGui::SliderFloat("Gamma", &gamma, 1.0f, 4.0f);
             ImGui::SliderFloat("Exposure", &exposure, 0.01f, 20.0f);
+            ImGui::Checkbox("PreZCull", &enablePreZCull);
             ImGui::Text("x: %.3f y: %.3f z: %.3f  FOV: %.1f", camera.pos().x, camera.pos().y, camera.pos().z, camera.FOV());
             ImGui::Text("Render Time: %.3f ms, FPS: %.3f", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
             ImGui::Text("\n");

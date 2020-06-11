@@ -26,7 +26,7 @@ void Texture::generate2D(int width, int height, GLuint format, GLuint filterType
 	slot = m_SlotsUsed++;
 }
 
-void Texture::generateDepth2D(int width, int height, GLuint filterType)
+void Texture::generateDepth2D(int width, int height, GLuint format, GLuint filterType)
 {
 	m_TextureType = GL_TEXTURE_2D;
 

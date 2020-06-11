@@ -21,13 +21,13 @@ void main()
 
 //$Fragment
 #version 430 core
-out vec4 fragColor;
 in vec2 texCoord;
 in vec3 fragPos;
+out vec4 FragColor;
 
 uniform sampler2D sky;
 
 void main()
 {
-	fragColor = texture(sky, texCoord);
+	FragColor = texture(sky, texCoord);
 }

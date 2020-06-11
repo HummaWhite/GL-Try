@@ -7,10 +7,12 @@
 class ShadowMap
 {
 public:
-	void init(int type, int width);
+	void init(int type, int width, GLuint format);
 
 	void bind();
 	void unbind();
+
+	int size() const { return m_Size; }
 
 	void linkTextureUnit(int unit);
 
@@ -23,4 +25,5 @@ public:
 private:
 	FrameBuffer m_FB;
 	Texture m_Tex;
+	int m_Size;
 };
