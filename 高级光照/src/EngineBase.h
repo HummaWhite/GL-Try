@@ -28,6 +28,7 @@
 #include "Skybox.h"
 #include "CheckError.h"
 #include "ShadowMap.h"
+#include "Material.h"
 
 class EngineBase
 {

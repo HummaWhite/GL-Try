@@ -151,7 +151,7 @@ void findBlocker(
 float PCFcubeMap(samplerCube shadowCubeMap, vec3 uv, float zReceiver, float diskRad)
 {
     float sum = 0;
-    float bias = 0.06;
+    float bias = 0.12;
     for (int i = 0; i < PCF_NUM_SAMPLES; i++)
     {
         float shadowMapDepth = texture(shadowCubeMap, uv + sampleDisk[i] * diskRad).r;

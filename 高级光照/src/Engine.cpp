@@ -1,5 +1,15 @@
 #include "Engine.h"
 
+const MaterialPBR material0 =
+{
+    { 0.3f, 0.6f, 1.0f }, 1.0f, 1.0f, 0.1f
+};
+
+const MaterialPBR material1 =
+{
+    { 1.0f, 1.0f, 1.0f }, 0.0f, 1.0f, 0.5f
+};
+
 Engine::Engine(int width, int height) :
     EngineBase(width, height),
     camera({ 0, -20, 8 }),
@@ -14,16 +24,14 @@ Engine::Engine(int width, int height) :
     screenFB(nullptr),
     screenRB(nullptr),
     screenFBTex(nullptr),
-    matAlbedo(1.0f, 1.0f, 1.0f),
-    matMetallic(0.75f),
-    matRoughness(0.2f),
-    matAo(0.1f),
     cursorDisabled(true),
     lastCursorX(this->windowWidth() / 2),
     lastCursorY(this->windowHeight() / 2),
     firstCursorMove(true),
     F1Pressed(false),
-    enablePreZCull(true)
+    enablePreZCull(true),
+    objectIndexGUI(0),
+    lightIndexGUI(0)
 {
 }
 
@@ -198,7 +206,7 @@ void Engine::setupFrameBuffersAndTextures()
 void Engine::setupLights()
 {
     Light* light = new Light({ 0.0f, 0.0f, 14.0f }, { 1.0f, 1.0f, 1.0f });
-    Light* light2 = new Light({ 6.0f, -6.0f, 0.0f }, { 1.0f, 0.0f, 1.0f });
+    Light* light2 = new Light({ 6.0f, -6.0f, 0.0f }, { 0.7f, 0.0f, 0.8f });
     Light* light3 = new Light({ -4.0, -2.0f, -1.0f }, { 0.2f, 0.5f, 0.9f });
     lights.push_back(light);
     lights.push_back(light2);
@@ -207,23 +215,44 @@ void Engine::setupLights()
 
 void Engine::setupObjects()
 {
-    screenVB.allocate(sizeof(SCREEN_COORD), SCREEN_COORD, 6);
-    screenVA.addBuffer(screenVB, LAYOUT_POS2);
-
-    bunny.loadModel("res/model/bunny.obj");
-    bunny.setPos(glm::vec3(0.0f, 0.0f, 8.0f));
-    objects.push_back(&bunny);
-
-    nano.loadModel("res/model/nanosuit/nanosuit.obj");
-    nano.setPos(glm::vec3(2.0f, 0.0f, -5.0f));
-    objects.push_back(&nano);
-
     square = new Square();
     square->addTangents();
     square->setupVA();
     sphere = new Sphere(20, 10, 1.0f, Shape::VERTEX);
     sphere->addTangents();
     sphere->setupVA();
+
+    screenVB.allocate(sizeof(SCREEN_COORD), SCREEN_COORD, 6);
+    screenVA.addBuffer(screenVB, LAYOUT_POS2);
+
+    Model* bunny = new Model();
+    bunny->loadModel("res/model/bunny.obj");
+    bunny->setPos(glm::vec3(0.5f, 0.5f, 8.0f));
+    bunny->setSize(0.5f);
+    objects.push_back(bunny);
+    materials.push_back(material0);
+
+    Model* nano = new Model();
+    nano->loadModel("res/model/nanosuit/nanosuit.obj");
+    nano->setPos(glm::vec3(2.0f, 0.0f, -5.0f));
+    objects.push_back(nano);
+    materials.push_back(material0);
+
+    Model* floor = new Model();
+    floor->loadShape(*square);
+    floor->setPos(0.0f, 0.0f, -5.0f);
+    floor->setSize(40.0f);
+    objects.push_back(floor);
+    materials.push_back(material1);
+
+    Shape* teapot = new BezierCurves("res/model/teapotCGA.bpt", 20, 20, Shape::VERTEX);
+    teapot->addTangents();
+    teapot->setupVA();
+    Model* pot = new Model();
+    pot->loadShape(*teapot);
+    pot->setPos(8.0f, -4.0f, -5.0f);
+    objects.push_back(pot);
+    materials.push_back(material1);
 }
 
 void Engine::setupShaders()
@@ -316,7 +345,6 @@ void Engine::renderPass()
     shader.setLight(lights);
 
     //shader.setTexture("ordTex", ordTex, ordTex.slot);
-    shader.setMaterial(matAlbedo, matMetallic, matRoughness, matAo);
     shader.setUniform1i("useTexture", useTexture);
     shader.setUniform1i("useNormalMap", useNormalMap);
     //shader.setTexture("material.normalMap", normMap, normMap.slot);
@@ -336,24 +364,21 @@ void Engine::renderPass()
     }
     shader.setUniform1f("shadowFarPlane", SHADOW_FARPLANE);
 
-    for (auto i : objects) i->draw(shader);
+    for (int i = 0; i < objects.size(); i++)
+    {
+        shader.setMaterial(materials[i]);
+        objects[i]->draw(shader);
+    }
 
-    glm::mat4 model = glm::mat4(1.0f);
-    model = glm::translate(model, glm::vec3(0.0, 0.0, -5.0f));
-    model = glm::scale(model, glm::vec3(40.0f, 40.0f, 40.0f));
-    glm::vec3 wallColor(1.0f, 1.0f, 1.0f);
     shader.setUniform1i("useReflMap", 0);
     shader.setUniform1i("useNormalMap", 0);
-    shader.setUniformMat4("model", model);
-    shader.setMaterial(wallColor, 0.0f, 1.0f, 0.5f);
-    renderer.draw(square->VA(), shader);
 
     lightShader.setUniformMat4("proj", proj);
     lightShader.setUniformMat4("view", camera.getViewMatrix());
 
     for (int i = 0; i < lights.size(); i++)
     {
-        model = glm::translate(glm::mat4(1.0f), lights[i]->pos);
+        glm::mat4 model = glm::translate(glm::mat4(1.0f), lights[i]->pos);
         model = glm::scale(model, glm::vec3(lights[i]->size));
         lightShader.setUniformMat4("model", model);
         lightShader.setUniformVec3("lightColor", glm::length(lights[i]->color) * glm::normalize(lights[i]->color));
@@ -385,24 +410,29 @@ void Engine::renderGUI()
     {
         ImGui::Begin("TEST");
         {
-            ImGui::Text("Light0");
-            ImGui::ColorEdit3("Color0", (float*)&lights[0]->color);
-            ImGui::SliderFloat3("Pos0", (float*)&lights[0]->pos, -20.0f, 20.0f);
-            ImGui::SliderFloat("Strength", &lights[0]->strength, 0.1f, 100.0f);
-            ImGui::SliderFloat("Size0", &lights[0]->size, 0.01f, 1.0f);
-            ImGui::Text("Light1");
-            ImGui::ColorEdit3("Color1", (float*)&lights[1]->color);
-            ImGui::SliderFloat("Size1", &lights[1]->size, 0.01f, 1.0f);
-            ImGui::SliderFloat3("Pos1", (float*)&lights[1]->pos, -20.0f, 20.0f);
-            ImGui::Text("Light2");
-            ImGui::ColorEdit3("Color2", (float*)&lights[2]->color);
-            ImGui::SliderFloat("Size2", &lights[2]->size, 0.01f, 1.0f);
-            ImGui::SliderFloat3("Pos2", (float*)&lights[2]->pos, -20.0f, 20.0f);
-            ImGui::Checkbox("Vertical Sync", &verticalSync);
-            ImGui::ColorEdit3("Albedo", (float*)&matAlbedo);
-            ImGui::SliderFloat("Metallic", &matMetallic, 0.0f, 1.0f);
-            ImGui::SliderFloat("Roughness", &matRoughness, 0.0f, 1.0f);
-            ImGui::SliderFloat("Ao", &matAo, 0.0f, 1.0f);
+            ImGui::Text("Choose Light");
+            ImGui::SliderInt("Light", &lightIndexGUI, 0, lights.size() - 1);
+            Light* lit = lights[lightIndexGUI];
+            ImGui::ColorEdit3("Color0", (float*)&lit->color);
+            ImGui::SliderFloat("Size0", &lit->size, 0.01f, 1.0f);
+            ImGui::SliderFloat("Strength0", &lit->strength, 0.1f, 100.0f);
+            ImGui::SliderFloat3("Pos0", (float*)&lit->pos, -20.0f, 20.0f);
+
+            ImGui::SliderInt("Choose Object", &objectIndexGUI, 0, objects.size() - 1);
+            Model* obj = objects[objectIndexGUI];
+            glm::vec3 pos = obj->pos();
+            ImGui::SliderFloat3("Position", (float*)&pos, -20.0f, 20.0f);
+            obj->setPos(pos);
+            glm::vec3 scale = obj->scale();
+            ImGui::SliderFloat3("Scale", (float*)&scale, 0.1f, 5.0f);
+            obj->setScale(scale);
+
+            MaterialPBR& mat = materials[objectIndexGUI];
+            ImGui::ColorEdit3("Albedo", (float*)&mat.albedo);
+            ImGui::SliderFloat("Metallic", &mat.metallic, 0.0f, 1.0f);
+            ImGui::SliderFloat("Roughness", &mat.roughness, 0.0f, 1.0f);
+            ImGui::SliderFloat("Ao", &mat.ao, 0.0f, 1.0f);
+
             ImGui::Checkbox("Shadow", &shadowOn);
             ImGui::Checkbox("Texture", &useTexture);
             ImGui::Checkbox("NormalMap", &useNormalMap);
@@ -411,6 +441,8 @@ void Engine::renderGUI()
             ImGui::SliderFloat("Gamma", &gamma, 1.0f, 4.0f);
             ImGui::SliderFloat("Exposure", &exposure, 0.01f, 20.0f);
             ImGui::Checkbox("PreZCull", &enablePreZCull);
+            ImGui::Checkbox("Vertical Sync", &verticalSync);
+
             ImGui::Text("x: %.3f y: %.3f z: %.3f  FOV: %.1f", camera.pos().x, camera.pos().y, camera.pos().z, camera.FOV());
             ImGui::Text("Render Time: %.3f ms, FPS: %.3f", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
             ImGui::Text("\n");

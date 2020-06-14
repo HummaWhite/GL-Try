@@ -46,7 +46,7 @@ public:
 	};
 
 	void loadMesh(const void* data, int count, std::vector<GLuint> indices, BufferLayout layout, bool batchedData = false);
-	void loadShape(Shape* shape);
+	void loadShape(Shape& shape);
 	void addTexture(TextureMesh* tex);
 	void draw(Shader& shader);
 

@@ -2,10 +2,12 @@
 
 glm::mat4 Model::constRot = glm::rotate(glm::mat4(1.0f), glm::radians(90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
 
-Model::Model()
+Model::Model() :
+	m_Pos(glm::vec3(0.0f)),
+	m_RotMatrix(glm::mat4(1.0f)),
+	m_Scale(glm::vec3(1.0f)),
+	m_LoadedFromFile(false)
 {
-	m_Pos = glm::vec3(0.0f, 0.0f, 0.0f);
-	m_RotMatrix = glm::mat4(1.0f);
 }
 
 Model::~Model()
@@ -21,6 +23,7 @@ Model::~Model()
 
 void Model::loadModel(const char* filePath)
 {
+	m_LoadedFromFile = true;
 	Assimp::Importer importer;
 	GLuint option = aiProcess_Triangulate
 		| aiProcess_FlipUVs
@@ -80,6 +83,38 @@ void Model::rotateObjectSpace(float angle, glm::vec3 axis)
 void Model::rotateWorldSpace(float angle, glm::vec3 axis)
 {
 	m_RotMatrix = glm::rotate(glm::mat4(1.0f), glm::radians(angle), axis) * m_RotMatrix;
+}
+
+void Model::setScale(glm::vec3 scale)
+{
+	m_Scale = scale;
+}
+
+void Model::setScale(float xScale, float yScale, float zScale)
+{
+	m_Scale = glm::vec3(xScale, yScale, zScale);
+}
+
+void Model::setSize(float size)
+{
+	m_Scale = glm::vec3(size);
+}
+
+glm::mat4 Model::modelMatrix() const
+{
+	glm::mat4 model(1.0f);
+	model = glm::translate(model, m_Pos);
+	model = glm::scale(model, m_Scale);
+	model = model * m_RotMatrix;
+	if (m_LoadedFromFile) model = model * constRot;
+	return model;
+}
+
+void Model::loadShape(Shape& shape)
+{
+	Mesh* mesh = new Mesh();
+	mesh->loadShape(shape);
+	m_Meshes.push_back(mesh);
 }
 
 void Model::processNode(aiNode* node, const aiScene* scene)

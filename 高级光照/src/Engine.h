@@ -2,7 +2,7 @@
 
 #include "EngineBase.h"
 
-const float SHADOW_FARPLANE = 50.0f;
+const float SHADOW_FARPLANE = 100.0f;
 const float SHADOW_NEARPLANE = 0.1f;
 const float PREZ_FARPLANE = 100.0f;
 const int LIGHT_COUNT = 3;
@@ -58,7 +58,6 @@ private:
 
 	Shape* square;
 	Shape* sphere;
-	Model bunny, nano;
 
 private:
 	bool verticalSync;
@@ -71,10 +70,9 @@ private:
 	bool useReflMap;
 	float reflStrength;
 
-	glm::vec3 matAlbedo;
-	float matMetallic;
-	float matRoughness;
-	float matAo;
+	std::vector<MaterialPBR> materials;
+	int objectIndexGUI;
+	int lightIndexGUI;
 
 	bool enablePreZCull;
 

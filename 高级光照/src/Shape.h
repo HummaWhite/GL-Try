@@ -20,6 +20,7 @@ public:
 	int type() const { return m_Type; }
 	int vertexCount() const { return m_VertexCount; }
 	VertexArray& VA() { return m_VA; }
+	Buffer* VB() { return m_VB; }
 	void addTangents();
 	void setupVA();
 	void set(float* buffer, int type, int vertexCount);

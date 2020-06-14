@@ -175,6 +175,22 @@ void Shader::setMaterial(const glm::vec3& albedo, float metallic, float roughnes
 	setUniform1f("material.ao", ao);
 }
 
+void Shader::setMaterial(const MaterialPhong& material)
+{
+	setUniformVec3("material.ambient", material.ambient);
+	setUniformVec3("material.diffuse", material.diffuse);
+	setUniformVec3("material.specular", material.specular);
+	setUniform1f("material.shininess", material.shininess);
+}
+
+void Shader::setMaterial(const MaterialPBR& material)
+{
+	setUniformVec3("material.albedo", material.albedo);
+	setUniform1f("material.metallic", material.metallic);
+	setUniform1f("material.roughness", material.roughness);
+	setUniform1f("material.ao", material.ao);
+}
+
 GLint Shader::getUniformLocation(GLuint programID, const char* name)
 {
 	GLint location = glGetUniformLocation(programID, name);

@@ -24,8 +24,15 @@ public:
 	void move(glm::vec3 vec);
 	void rotateObjectSpace(float angle, glm::vec3 axis);
 	void rotateWorldSpace(float abgle, glm::vec3 axis);
+	void setScale(glm::vec3 scale);
+	void setScale(float xScale, float yScale, float zScale);
+	void setSize(float size);
 
-	glm::mat4 modelMatrix() const { return glm::translate(glm::mat4(1.0f), m_Pos) * m_RotMatrix * constRot; }
+	glm::vec3 pos() const { return m_Pos; }
+	glm::vec3 scale() const { return m_Scale; }
+	glm::mat4 modelMatrix() const;
+
+	void loadShape(Shape& shape);
 
 private:
 	void processNode(aiNode* node, const aiScene* scene);
@@ -34,6 +41,8 @@ private:
 private:
 	std::vector<Mesh*> m_Meshes;
 	glm::vec3 m_Pos;
+	glm::vec3 m_Scale;
 	glm::mat4 m_RotMatrix;
+	bool m_LoadedFromFile;
 	static glm::mat4 constRot;
 };

@@ -9,6 +9,7 @@
 
 #include "Lighting.h"
 #include "Texture.h"
+#include "Material.h"
 
 class Shader
 {
@@ -31,6 +32,8 @@ public:
 	void setTexture(const char* name, const Texture& tex, int unit) const;
 	void setLight(const LightGroup& lightGroup);
 	void setMaterial(const glm::vec3& albedo, float metallic, float roughness, float ao);
+	void setMaterial(const MaterialPhong& material);
+	void setMaterial(const MaterialPBR& material);
 	static GLint getUniformLocation(GLuint programID, const char* name);
 private:
 	void compileShader(const char* vertexSource, const char* fragmentSource, const char* geometrySource);

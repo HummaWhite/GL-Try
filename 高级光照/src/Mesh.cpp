@@ -8,8 +8,10 @@ void Mesh::loadMesh(const void* data, int count, std::vector<GLuint> indices, Bu
 	m_EB.allocate(indices.size() * sizeof(GLuint), &indices[0], indices.size());
 }
 
-void Mesh::loadShape(Shape* shape)
+void Mesh::loadShape(Shape& shape)
 {
+	m_VA = shape.VA();
+	m_VB = *shape.VB();
 }
 
 void Mesh::addTexture(TextureMesh* tex)
