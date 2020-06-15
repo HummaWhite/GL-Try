@@ -1,6 +1,7 @@
 #pragma once
 
 #include <iostream>
+#include <fstream>
 #include <string>
 #include <ctime>
 #include <map>
@@ -33,7 +34,7 @@
 class EngineBase
 {
 public:
-	EngineBase(int width, int height);
+	EngineBase();
 	~EngineBase();
 
 	int run();
@@ -57,7 +58,7 @@ public:
 	void error(const char* errString);
 
 private:
-	void setupGL(int width, int height);
+	void setupGL(int width, int height, bool border);
 
 	virtual void init() = 0;
 	virtual void renderLoop() = 0;

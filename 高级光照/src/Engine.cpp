@@ -10,8 +10,14 @@ const MaterialPBR material1 =
     { 1.0f, 1.0f, 1.0f }, 0.0f, 1.0f, 0.5f
 };
 
-Engine::Engine(int width, int height) :
-    EngineBase(width, height),
+char modelPathBuf[128] = { 0 };
+char shaderPathBuf[128] = { 0 };
+int windowSizeBuf[2] = { 0 };
+const char* defaultModelPath = "res/model/";
+const char* defaultShaderPath = "res/shader/";
+
+Engine::Engine() :
+    EngineBase(),
     camera({ 0, -20, 8 }),
     verticalSync(true),
     gamma(2.2f),
@@ -33,6 +39,8 @@ Engine::Engine(int width, int height) :
     objectIndexGUI(0),
     lightIndexGUI(0)
 {
+    windowSizeBuf[0] = this->windowWidth();
+    windowSizeBuf[1] = this->windowHeight();
 }
 
 Engine::~Engine()
@@ -62,15 +70,15 @@ void Engine::renderLoop()
     renderer.clear(0.0f, 0.0f, 0.0f);
 
     if (shadowOn) this->shadowPass(shadowMapPoint, lights, objects);
-
+    
     this->ZPass(*ZBuffer, objects);
-
+    
     this->renderPass();
-
+    
     this->postPass();
-
-    this->renderGUI();
-
+    
+    if (!cursorDisabled) this->renderGUI();
+    
     VerticalSyncStatus(verticalSync);
 
     glfwSwapBuffers(this->window());
@@ -128,24 +136,27 @@ void Engine::processKey(int key, int scancode, int action, int mode)
         glfwSetWindowShouldClose(this->window(), true);
         this->setTerminateStatus(true);
     }
-    if (this->getKeyStatus(GLFW_KEY_W) == GLFW_PRESS)
-        camera.move(GLFW_KEY_W);
-    if (this->getKeyStatus(GLFW_KEY_S) == GLFW_PRESS)
-        camera.move(GLFW_KEY_S);
-    if (this->getKeyStatus(GLFW_KEY_A) == GLFW_PRESS)
-        camera.move(GLFW_KEY_A);
-    if (this->getKeyStatus(GLFW_KEY_D) == GLFW_PRESS)
-        camera.move(GLFW_KEY_D);
-    if (this->getKeyStatus(GLFW_KEY_Q) == GLFW_PRESS)
-        camera.move(GLFW_KEY_Q);
-    if (this->getKeyStatus(GLFW_KEY_E) == GLFW_PRESS)
-        camera.move(GLFW_KEY_E);
-    if (this->getKeyStatus(GLFW_KEY_R) == GLFW_PRESS)
-        camera.move(GLFW_KEY_R);
-    if (this->getKeyStatus(GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS)
-        camera.move(GLFW_KEY_LEFT_SHIFT);
-    if (this->getKeyStatus(GLFW_KEY_SPACE) == GLFW_PRESS)
-        camera.move(GLFW_KEY_SPACE);
+    if (cursorDisabled)
+    {
+        if (this->getKeyStatus(GLFW_KEY_W) == GLFW_PRESS)
+            camera.move(GLFW_KEY_W);
+        if (this->getKeyStatus(GLFW_KEY_S) == GLFW_PRESS)
+            camera.move(GLFW_KEY_S);
+        if (this->getKeyStatus(GLFW_KEY_A) == GLFW_PRESS)
+            camera.move(GLFW_KEY_A);
+        if (this->getKeyStatus(GLFW_KEY_D) == GLFW_PRESS)
+            camera.move(GLFW_KEY_D);
+        if (this->getKeyStatus(GLFW_KEY_Q) == GLFW_PRESS)
+            camera.move(GLFW_KEY_Q);
+        if (this->getKeyStatus(GLFW_KEY_E) == GLFW_PRESS)
+            camera.move(GLFW_KEY_E);
+        if (this->getKeyStatus(GLFW_KEY_R) == GLFW_PRESS)
+            camera.move(GLFW_KEY_R);
+        if (this->getKeyStatus(GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS)
+            camera.move(GLFW_KEY_LEFT_SHIFT);
+        if (this->getKeyStatus(GLFW_KEY_SPACE) == GLFW_PRESS)
+            camera.move(GLFW_KEY_SPACE);
+    }
 
     if (this->getKeyStatus(GLFW_KEY_F1) == GLFW_PRESS) F1Pressed = true;
     if (this->getKeyStatus(GLFW_KEY_F1) == GLFW_RELEASE)
@@ -153,9 +164,13 @@ void Engine::processKey(int key, int scancode, int action, int mode)
         if (F1Pressed)
         {
             if (cursorDisabled)
+            {
                 glfwSetInputMode(this->window(), GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+            }
             else
+            {
                 glfwSetInputMode(this->window(), GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+            }
             cursorDisabled ^= 1;
             F1Pressed = false;
         }
@@ -195,7 +210,7 @@ void Engine::processResize(int width, int height)
 
 void Engine::setupFrameBuffersAndTextures()
 {
-    for (int i = 0; i < lights.size(); i++)
+    for (int i = 0; i < MAX_LIGHTS; i++)
     {
         shadowMapPoint[i].init(ShadowMap::POINT, 1024, GL_DEPTH_COMPONENT32F);
     }
@@ -225,41 +240,31 @@ void Engine::setupObjects()
     screenVB.allocate(sizeof(SCREEN_COORD), SCREEN_COORD, 6);
     screenVA.addBuffer(screenVB, LAYOUT_POS2);
 
-    Model* bunny = new Model();
-    bunny->loadModel("res/model/bunny.obj");
-    bunny->setPos(glm::vec3(0.5f, 0.5f, 8.0f));
-    bunny->setSize(0.5f);
+    Model* bunny = new Model("res/model/bunny.obj", { 0.5f, 0.5f, 8.0f }, 0.5f);
     objects.push_back(bunny);
     materials.push_back(material0);
 
-    Model* nano = new Model();
-    nano->loadModel("res/model/nanosuit/nanosuit.obj");
-    nano->setPos(glm::vec3(2.0f, 0.0f, -5.0f));
+    Model* nano = new Model("res/model/nanosuit/nanosuit.obj", { 2.0f, 0.0f, -5.0f });
     objects.push_back(nano);
     materials.push_back(material0);
 
-    Model* floor = new Model();
-    floor->loadShape(*square);
-    floor->setPos(0.0f, 0.0f, -5.0f);
-    floor->setSize(40.0f);
+    Model* floor = new Model(*square, { 0.0f, 0.0f, -5.0f }, 40.0f);
     objects.push_back(floor);
     materials.push_back(material1);
 
     Shape* teapot = new BezierCurves("res/model/teapotCGA.bpt", 20, 20, Shape::VERTEX);
     teapot->addTangents();
     teapot->setupVA();
-    Model* pot = new Model();
-    pot->loadShape(*teapot);
-    pot->setPos(8.0f, -4.0f, -5.0f);
+    Model* pot = new Model(*teapot, { 8.0f, -4.0f, -5.0f });
     objects.push_back(pot);
     materials.push_back(material1);
 }
 
 void Engine::setupShaders()
 {
+    shader = new Shader("res/shader/PBR.shader");
     lightShader.load("res/shader/light.shader");
     skyboxShader.load("res/shader/skyboxSphere.shader");
-    shader.load("res/shader/PBR.shader");
     scrShader.load("res/shader/frameBuffer.shader");
     shadowShader.load("res/shader/shadowMapPoint.shader");
     zShader.load("res/shader/Zpass.shader");
@@ -337,41 +342,41 @@ void Engine::renderPass()
     glm::mat4 proj = glm::perspective(glm::radians(camera.FOV()), (float)this->windowWidth() / (float)this->windowHeight(), 0.1f, 100.0f);
     glm::mat4 view = camera.getViewMatrix();
 
-    shader.setUniform2f("viewport", this->windowWidth(), this->windowHeight());
-    shader.setUniformMat4("proj", proj);
-    shader.setUniformMat4("view", view);
-    shader.setUniformVec3("viewPos", camera.pos());
-    shader.setUniform1f("normDir", 1.0);
-    shader.setLight(lights);
+    shader->setUniform2f("viewport", this->windowWidth(), this->windowHeight());
+    shader->setUniformMat4("proj", proj);
+    shader->setUniformMat4("view", view);
+    shader->setUniformVec3("viewPos", camera.pos());
+    shader->setUniform1f("normDir", 1.0);
+    shader->setLight(lights);
 
     //shader.setTexture("ordTex", ordTex, ordTex.slot);
-    shader.setUniform1i("useTexture", useTexture);
-    shader.setUniform1i("useNormalMap", useNormalMap);
+    shader->setUniform1i("useTexture", useTexture);
+    shader->setUniform1i("useNormalMap", useNormalMap);
     //shader.setTexture("material.normalMap", normMap, normMap.slot);
-    shader.setTexture("material.reflMap", skybox.texture(), skybox.texture().slot);
-    shader.setUniform1i("useReflMap", useReflMap);
-    shader.setUniform1f("material.reflStrength", reflStrength);
-    shader.setUniform1i("shadowOn", shadowOn);
+    //shader.setTexture("material.reflMap", skybox.texture(), skybox.texture().slot);
+    //shader.setUniform1i("useReflMap", useReflMap);
+    //shader.setUniform1f("material.reflStrength", reflStrength);
+    shader->setUniform1i("shadowOn", shadowOn);
 
-    shader.setTexture("preZTex", *ZBufferTex, 16);
-    shader.setUniform1f("preZFarPlane", PREZ_FARPLANE);
-    shader.setUniform1i("enablePreZCull", enablePreZCull);
+    shader->setTexture("preZTex", *ZBufferTex, 16);
+    shader->setUniform1f("preZFarPlane", PREZ_FARPLANE);
+    shader->setUniform1i("enablePreZCull", enablePreZCull);
 
     for (int i = 0; i < lights.size(); i++)
     {
         shadowMapPoint[i].linkTextureUnit(i + 8);
-        shader.setUniform1i(("shadowMapPoint[" + std::to_string(i) + "]").c_str(), i + 8);
+        shader->setUniform1i(("shadowMapPoint[" + std::to_string(i) + "]").c_str(), i + 8);
     }
-    shader.setUniform1f("shadowFarPlane", SHADOW_FARPLANE);
+    shader->setUniform1f("shadowFarPlane", SHADOW_FARPLANE);
 
     for (int i = 0; i < objects.size(); i++)
     {
-        shader.setMaterial(materials[i]);
-        objects[i]->draw(shader);
+        shader->setMaterial(materials[i]);
+        objects[i]->draw(*shader);
     }
 
-    shader.setUniform1i("useReflMap", 0);
-    shader.setUniform1i("useNormalMap", 0);
+    //shader.setUniform1i("useReflMap", 0);
+    shader->setUniform1i("useNormalMap", 0);
 
     lightShader.setUniformMat4("proj", proj);
     lightShader.setUniformMat4("view", camera.getViewMatrix());
@@ -408,24 +413,57 @@ void Engine::renderGUI()
     ImGui_ImplGlfw_NewFrame();
     ImGui::NewFrame();
     {
-        ImGui::Begin("TEST");
+        ImGui::Begin("Modify Lights");
         {
-            ImGui::Text("Choose Light");
-            ImGui::SliderInt("Light", &lightIndexGUI, 0, lights.size() - 1);
-            Light* lit = lights[lightIndexGUI];
-            ImGui::ColorEdit3("Color0", (float*)&lit->color);
-            ImGui::SliderFloat("Size0", &lit->size, 0.01f, 1.0f);
-            ImGui::SliderFloat("Strength0", &lit->strength, 0.1f, 100.0f);
-            ImGui::SliderFloat3("Pos0", (float*)&lit->pos, -20.0f, 20.0f);
-
-            ImGui::SliderInt("Choose Object", &objectIndexGUI, 0, objects.size() - 1);
+            if (lights.size() > 0)
+            {
+                ImGui::Text("Select Light");
+                ImGui::SliderInt("Light", &lightIndexGUI, 0, lights.size() - 1);
+                Light* lit = lights[lightIndexGUI];
+                ImGui::ColorEdit3("Color0", (float*)&lit->color);
+                ImGui::DragFloat("Size0", &lit->size, 0.01f, 0.01f, 3.0f);
+                ImGui::DragFloat("Strength0", &lit->strength, 0.1f, -10.0f, 10.0f);
+                ImGui::SliderFloat3("Pos0", (float*)&lit->pos, -20.0f, 20.0f);
+            }
+            if (ImGui::Button("New Light"))
+            {
+                if (lights.size() < MAX_LIGHTS)
+                {
+                    Light* lit = new Light({ 0.0f, 0.0f, 5.0f }, { 1.0f, 1.0f, 1.0f });
+                    lightIndexGUI = lights.size();
+                    lights.push_back(lit);
+                }
+            }
+            if (ImGui::Button("Remove Current"))
+            {
+                for (std::vector<Light*>::iterator it = lights.begin(); it != lights.end(); it++)
+                {
+                    if (*it == lights[lightIndexGUI])
+                    {
+                        delete lights[lightIndexGUI];
+                        lights.erase(it);
+                        lightIndexGUI = 0;
+                        break;
+                    }
+                }
+            }
+        }
+        ImGui::End();
+        ImGui::Begin("Modify Models");
+        {
+            ImGui::Text("Select Object");
+            ImGui::SliderInt("Object", &objectIndexGUI, 0, objects.size() - 1);
             Model* obj = objects[objectIndexGUI];
+            ImGui::Text(obj->name().c_str());
             glm::vec3 pos = obj->pos();
-            ImGui::SliderFloat3("Position", (float*)&pos, -20.0f, 20.0f);
+            ImGui::DragFloat3("Position", (float*)&pos, 0.1f);
             obj->setPos(pos);
             glm::vec3 scale = obj->scale();
-            ImGui::SliderFloat3("Scale", (float*)&scale, 0.1f, 5.0f);
+            ImGui::DragFloat3("Scale", (float*)&scale, 0.1f, 0.1f, 100.0f);
             obj->setScale(scale);
+            glm::vec3 angle = obj->angle();
+            ImGui::DragFloat3("Angle", (float*)&angle, 0.1f);
+            obj->setAngle(angle);
 
             MaterialPBR& mat = materials[objectIndexGUI];
             ImGui::ColorEdit3("Albedo", (float*)&mat.albedo);
@@ -433,15 +471,51 @@ void Engine::renderGUI()
             ImGui::SliderFloat("Roughness", &mat.roughness, 0.0f, 1.0f);
             ImGui::SliderFloat("Ao", &mat.ao, 0.0f, 1.0f);
 
+            ImGui::InputText("Path", modelPathBuf, 128);
+            if (ImGui::Button("Load"))
+            {
+                Model* newObj = new Model();
+                if (newObj->loadModel(modelPathBuf))
+                {
+                    objectIndexGUI = objects.size();
+                    objects.push_back(newObj);
+                    materials.push_back(material0);
+                }
+                else delete newObj;
+            }
+        }
+        ImGui::End();
+        ImGui::Begin("Modify Main RenderPass Shader");
+        {
+            ImGui::Text("Current File:");
+            ImGui::Text(shader->name().c_str());
+            ImGui::InputText("Path", shaderPathBuf, 128);
+            if (ImGui::Button("Reload"))
+            {
+                delete shader;
+                shader = new Shader();
+                if (!shader->load(shaderPathBuf))
+                {
+                    shader->load("res/shader/PBR.shader");
+                }
+            }
+        }
+        ImGui::End();
+        ImGui::Begin("Test Options");
+        {
             ImGui::Checkbox("Shadow", &shadowOn);
             ImGui::Checkbox("Texture", &useTexture);
             ImGui::Checkbox("NormalMap", &useNormalMap);
-            ImGui::Checkbox("ReflMap", &useReflMap);
-            ImGui::SliderFloat("ReflStrength", &reflStrength, 0.0f, 1.0f);
-            ImGui::SliderFloat("Gamma", &gamma, 1.0f, 4.0f);
-            ImGui::SliderFloat("Exposure", &exposure, 0.01f, 20.0f);
+            //ImGui::Checkbox("ReflMap", &useReflMap);
+            //ImGui::SliderFloat("ReflStrength", &reflStrength, 0.0f, 1.0f);
             ImGui::Checkbox("PreZCull", &enablePreZCull);
             ImGui::Checkbox("Vertical Sync", &verticalSync);
+            ImGui::DragFloat("Gamma", &gamma, 0.01f, 1.0f, 4.0f);
+            ImGui::DragFloat("Exposure", &exposure, 0.01f, 0.1f, 100.0f);
+
+            ImGui::Text("Window Size: %d x %d", windowSizeBuf[0], windowSizeBuf[1]);
+            ImGui::InputInt2("New Size", windowSizeBuf);
+            if (ImGui::Button("Set")) this->processResize(windowSizeBuf[0], windowSizeBuf[1]);
 
             ImGui::Text("x: %.3f y: %.3f z: %.3f  FOV: %.1f", camera.pos().x, camera.pos().y, camera.pos().z, camera.FOV());
             ImGui::Text("Render Time: %.3f ms, FPS: %.3f", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
@@ -450,6 +524,10 @@ void Engine::renderGUI()
             ImGui::Text("Mouse                  - view");
             ImGui::Text("F1                     - release mouse");
             ImGui::Text("ESC                    - exit");
+            if (ImGui::Button("Exit"))
+            {
+                this->setTerminateStatus(true);
+            }
         }
         ImGui::End();
     }

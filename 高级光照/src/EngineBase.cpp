@@ -1,13 +1,17 @@
 #include "EngineBase.h"
 
-EngineBase::EngineBase(int width, int height) :
+EngineBase::EngineBase() :
     m_Window(nullptr),
     m_ShouldTerminate(false),
-    m_ErrorOccured(false), 
-    m_WindowWidth(width),
-    m_WindowHeight(height)
+    m_ErrorOccured(false)
 {
-    this->setupGL(m_WindowWidth, m_WindowHeight);
+    std::fstream setupFile;
+    std::cout << "Loading setup.ini" << std::endl;
+    setupFile.open("setup.ini");
+    bool border;
+    setupFile >> m_WindowWidth >> m_WindowHeight >> border;
+    setupFile.close();
+    this->setupGL(m_WindowWidth, m_WindowHeight, border);
 }
 
 EngineBase::~EngineBase()
@@ -18,7 +22,7 @@ int EngineBase::run()
 {
     this->init();
 
-    while (!this->shouldTerminate() || !glfwWindowShouldClose(this->m_Window))
+    while (!this->shouldTerminate() && !glfwWindowShouldClose(this->m_Window))
     {
         this->renderLoop();
     }
@@ -35,12 +39,13 @@ void EngineBase::setViewport(int x, int y, int width, int height)
     glViewport(x, y, width, height);
 }
 
-void EngineBase::setupGL(int width, int height)
+void EngineBase::setupGL(int width, int height, bool border)
 {
     glfwInit();
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 5);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+    glfwWindowHint(GLFW_DECORATED, border);
 
     m_Window = glfwCreateWindow(width, height, "OpenGL-Try", NULL, NULL);
     if (m_Window == NULL)
@@ -74,7 +79,7 @@ void EngineBase::error(const char* errString)
 
 void EngineBase::resizeWindow(int width, int height)
 {
-    //glfwSetWindowSize(this->m_Window, width, height);
+    glfwSetWindowSize(this->m_Window, width, height);
     this->m_WindowWidth = width;
     this->m_WindowHeight = height;
 }

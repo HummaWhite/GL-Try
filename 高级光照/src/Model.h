@@ -14,9 +14,11 @@ class Model
 {
 public:
 	Model();
+	Model(const char* filePath, glm::vec3 pos = { 0.0f, 0.0f, 0.0f }, float size = 1.0f);
+	Model(Shape& shape, glm::vec3 pos = { 0.0f, 0.0f, 0.0f }, float size = 1.0f);
 	~Model();
 
-	void loadModel(const char* filePath);
+	bool loadModel(const char* filePath);
 	void draw(Shader& shader);
 
 	void setPos(glm::vec3 pos);
@@ -26,11 +28,15 @@ public:
 	void rotateWorldSpace(float abgle, glm::vec3 axis);
 	void setScale(glm::vec3 scale);
 	void setScale(float xScale, float yScale, float zScale);
+	void setAngle(glm::vec3 angle);
+	void setAngle(float yaw, float pitch, float roll);
 	void setSize(float size);
 
 	glm::vec3 pos() const { return m_Pos; }
 	glm::vec3 scale() const { return m_Scale; }
+	glm::vec3 angle() const { return m_Angle; }
 	glm::mat4 modelMatrix() const;
+	std::string name() const { return m_Name; }
 
 	void loadShape(Shape& shape);
 
@@ -42,7 +48,10 @@ private:
 	std::vector<Mesh*> m_Meshes;
 	glm::vec3 m_Pos;
 	glm::vec3 m_Scale;
+	glm::vec3 m_Angle;
 	glm::mat4 m_RotMatrix;
 	bool m_LoadedFromFile;
+	std::string m_Name;
+
 	static glm::mat4 constRot;
 };

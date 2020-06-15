@@ -5,13 +5,13 @@
 const float SHADOW_FARPLANE = 100.0f;
 const float SHADOW_NEARPLANE = 0.1f;
 const float PREZ_FARPLANE = 100.0f;
-const int LIGHT_COUNT = 3;
+const int MAX_LIGHTS = 4;
 
 class Engine :
 	public EngineBase
 {
 public:
-	Engine(int width, int height);
+	Engine();
 	~Engine();
 
 private:
@@ -42,9 +42,10 @@ private:
 	Camera camera;
 	std::vector<Model*> objects;
 	std::vector<Light*> lights;
-	Shader shader, scrShader, skyboxShader, lightShader, shadowShader, zShader;
+	std::vector<MaterialPBR> materials;
+	Shader* shader, scrShader, skyboxShader, lightShader, shadowShader, zShader;
 	Skybox skybox;
-	ShadowMap shadowMapPoint[LIGHT_COUNT];
+	ShadowMap shadowMapPoint[MAX_LIGHTS];
 
 	FrameBuffer* screenFB;
 	RenderBuffer* screenRB;
@@ -70,7 +71,6 @@ private:
 	bool useReflMap;
 	float reflStrength;
 
-	std::vector<MaterialPBR> materials;
 	int objectIndexGUI;
 	int lightIndexGUI;
 

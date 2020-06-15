@@ -7,7 +7,7 @@
 #include <cstring>
 #include <string>
 
-void Shader::load(const char* filePath)
+bool Shader::load(const char* filePath)
 {
 	std::string vertexCode;
 	std::string fragmentCode;
@@ -20,6 +20,11 @@ void Shader::load(const char* filePath)
 	try
 	{
 		file.open(filePath);
+		if (!file.is_open())
+		{
+			std::cout << "Shader file not found" << std::endl;
+			return false;
+		}
 		std::string fileString;
 		while (std::getline(file, fileString))
 		{
@@ -58,6 +63,13 @@ void Shader::load(const char* filePath)
 	compileShader(vertexCode.c_str(), fragmentCode.c_str(), geometry);
 
 	std::cout << "Done" << std::endl;
+	m_Name = std::string(filePath);
+	return true;
+}
+
+Shader::Shader(const char* filePath)
+{
+	load(filePath);
 }
 
 Shader::~Shader()
@@ -156,7 +168,7 @@ void Shader::setLight(const LightGroup& lightGroup)
 			sprintf(tmp, "pointLights[%d].attenuation", pointCount);
 			setUniformVec3(tmp, light->attenuation);
 			sprintf(tmp, "pointLights[%d].strength", pointCount);
-			setUniform1f(tmp, light->strength);
+			setUniform1f(tmp, exp(light->strength));
 			sprintf(tmp, "pointLights[%d].size", pointCount);
 			setUniform1f(tmp, light->size);
 			pointCount++;

@@ -15,9 +15,10 @@ class Shader
 {
 public:
 	Shader() : m_ID(0) {}
+	Shader(const char* filePath);
 	~Shader();
 	GLuint ID() const { return m_ID; }
-	void load(const char* filePath);
+	bool load(const char* filePath);
 	void enable() const;
 	void disable() const;
 	void setUniform1i(const char* name, int v) const;
@@ -35,7 +36,11 @@ public:
 	void setMaterial(const MaterialPhong& material);
 	void setMaterial(const MaterialPBR& material);
 	static GLint getUniformLocation(GLuint programID, const char* name);
+
+	std::string name() const { return m_Name; }
+
 private:
 	void compileShader(const char* vertexSource, const char* fragmentSource, const char* geometrySource);
 	GLuint m_ID;
+	std::string m_Name;
 };

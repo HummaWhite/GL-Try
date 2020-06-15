@@ -3,7 +3,7 @@
 
 int main()
 {
-    Engine engine(1280, 720);
+    Engine engine;
     Inputs::bindEngine(&engine);
     Inputs::setup();
     return engine.run();

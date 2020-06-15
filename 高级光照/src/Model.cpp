@@ -10,6 +10,24 @@ Model::Model() :
 {
 }
 
+Model::Model(const char* filePath, glm::vec3 pos, float size) :
+	m_Pos(pos),
+	m_Scale(size),
+	m_RotMatrix(glm::mat4(1.0f)),
+	m_LoadedFromFile(true)
+{
+	loadModel(filePath);
+}
+
+Model::Model(Shape& shape, glm::vec3 pos, float size) :
+	m_Pos(pos),
+	m_Scale(size),
+	m_RotMatrix(glm::mat4(1.0f)),
+	m_LoadedFromFile(false)
+{
+	loadShape(shape);
+}
+
 Model::~Model()
 {
 	for (auto i : m_Meshes)
@@ -21,7 +39,7 @@ Model::~Model()
 	}
 }
 
-void Model::loadModel(const char* filePath)
+bool Model::loadModel(const char* filePath)
 {
 	m_LoadedFromFile = true;
 	Assimp::Importer importer;
@@ -42,12 +60,14 @@ void Model::loadModel(const char* filePath)
 	if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode)
 	{
 		std::cout << "Error: Assimp::" << importer.GetErrorString() << std::endl;
-		return;
+		return false;
 	}
 
 	processNode(scene->mRootNode, scene);
 
 	std::cout << "Done" << std::endl;
+	m_Name = std::string(filePath);
+	return true;
 }
 
 void Model::draw(Shader& shader)
@@ -95,6 +115,16 @@ void Model::setScale(float xScale, float yScale, float zScale)
 	m_Scale = glm::vec3(xScale, yScale, zScale);
 }
 
+void Model::setAngle(glm::vec3 angle)
+{
+	m_Angle = angle;
+}
+
+void Model::setAngle(float yaw, float pitch, float roll)
+{
+	m_Angle = glm::vec3(yaw, pitch, roll);
+}
+
 void Model::setSize(float size)
 {
 	m_Scale = glm::vec3(size);
@@ -105,7 +135,9 @@ glm::mat4 Model::modelMatrix() const
 	glm::mat4 model(1.0f);
 	model = glm::translate(model, m_Pos);
 	model = glm::scale(model, m_Scale);
-	model = model * m_RotMatrix;
+	model = glm::rotate(model, glm::radians(m_Angle.x), glm::vec3(0.0f, 0.0f, 1.0f));
+	model = glm::rotate(model, glm::radians(m_Angle.y), glm::vec3(1.0f, 0.0f, 0.0f));
+	model = glm::rotate(model, glm::radians(m_Angle.z), glm::vec3(0.0f, 1.0f, 0.0f));
 	if (m_LoadedFromFile) model = model * constRot;
 	return model;
 }
@@ -115,6 +147,7 @@ void Model::loadShape(Shape& shape)
 	Mesh* mesh = new Mesh();
 	mesh->loadShape(shape);
 	m_Meshes.push_back(mesh);
+	m_Name = "Loaded From Shape";
 }
 
 void Model::processNode(aiNode* node, const aiScene* scene)
