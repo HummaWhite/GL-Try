@@ -22,3 +22,11 @@ struct MaterialPBR
 	float roughness;
 	float ao;
 };
+
+namespace Material
+{
+	const MaterialPBR defaultMaterialPBR =
+	{
+		{ 0.3f, 0.6f, 1.0f }, 1.0f, 1.0f, 0.1f
+	};
+}

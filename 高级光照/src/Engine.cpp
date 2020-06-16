@@ -1,10 +1,5 @@
 #include "Engine.h"
 
-const MaterialPBR material0 =
-{
-    { 0.3f, 0.6f, 1.0f }, 1.0f, 1.0f, 0.1f
-};
-
 const MaterialPBR material1 =
 {
     { 1.0f, 1.0f, 1.0f }, 0.0f, 1.0f, 0.5f
@@ -220,12 +215,6 @@ void Engine::setupFrameBuffersAndTextures()
 
 void Engine::setupLights()
 {
-    Light* light = new Light({ 0.0f, 0.0f, 14.0f }, { 1.0f, 1.0f, 1.0f });
-    Light* light2 = new Light({ 6.0f, -6.0f, 0.0f }, { 0.7f, 0.0f, 0.8f });
-    Light* light3 = new Light({ -4.0, -2.0f, -1.0f }, { 0.2f, 0.5f, 0.9f });
-    lights.push_back(light);
-    lights.push_back(light2);
-    lights.push_back(light3);
 }
 
 void Engine::setupObjects()
@@ -239,25 +228,6 @@ void Engine::setupObjects()
 
     screenVB.allocate(sizeof(SCREEN_COORD), SCREEN_COORD, 6);
     screenVA.addBuffer(screenVB, LAYOUT_POS2);
-
-    Model* bunny = new Model("res/model/bunny.obj", { 0.5f, 0.5f, 8.0f }, 0.5f);
-    objects.push_back(bunny);
-    materials.push_back(material0);
-
-    Model* nano = new Model("res/model/nanosuit/nanosuit.obj", { 2.0f, 0.0f, -5.0f });
-    objects.push_back(nano);
-    materials.push_back(material0);
-
-    Model* floor = new Model(*square, { 0.0f, 0.0f, -5.0f }, 40.0f);
-    objects.push_back(floor);
-    materials.push_back(material1);
-
-    Shape* teapot = new BezierCurves("res/model/teapotCGA.bpt", 20, 20, Shape::VERTEX);
-    teapot->addTangents();
-    teapot->setupVA();
-    Model* pot = new Model(*teapot, { 8.0f, -4.0f, -5.0f });
-    objects.push_back(pot);
-    materials.push_back(material1);
 }
 
 void Engine::setupShaders()
@@ -431,45 +401,40 @@ void Engine::renderGUI()
                 {
                     Light* lit = new Light({ 0.0f, 0.0f, 5.0f }, { 1.0f, 1.0f, 1.0f });
                     lightIndexGUI = lights.size();
-                    lights.push_back(lit);
+                    this->addLight(lit);
                 }
             }
             if (ImGui::Button("Remove Current"))
             {
-                for (std::vector<Light*>::iterator it = lights.begin(); it != lights.end(); it++)
-                {
-                    if (*it == lights[lightIndexGUI])
-                    {
-                        delete lights[lightIndexGUI];
-                        lights.erase(it);
-                        lightIndexGUI = 0;
-                        break;
-                    }
-                }
+                this->removeLight(lightIndexGUI);
+                lightIndexGUI = 0;
             }
         }
         ImGui::End();
         ImGui::Begin("Modify Models");
         {
-            ImGui::Text("Select Object");
-            ImGui::SliderInt("Object", &objectIndexGUI, 0, objects.size() - 1);
-            Model* obj = objects[objectIndexGUI];
-            ImGui::Text(obj->name().c_str());
-            glm::vec3 pos = obj->pos();
-            ImGui::DragFloat3("Position", (float*)&pos, 0.1f);
-            obj->setPos(pos);
-            glm::vec3 scale = obj->scale();
-            ImGui::DragFloat3("Scale", (float*)&scale, 0.1f, 0.1f, 100.0f);
-            obj->setScale(scale);
-            glm::vec3 angle = obj->angle();
-            ImGui::DragFloat3("Angle", (float*)&angle, 0.1f);
-            obj->setAngle(angle);
+            if (objects.size() > 0)
+            {
+                ImGui::Text("Select Object");
+                ImGui::SliderInt("Object", &objectIndexGUI, 0, objects.size() - 1);
+                Model* obj = objects[objectIndexGUI];
+                ImGui::Text(obj->name().c_str());
+                glm::vec3 pos = obj->pos();
+                ImGui::DragFloat3("Position", (float*)&pos, 0.1f);
+                obj->setPos(pos);
+                glm::vec3 scale = obj->scale();
+                ImGui::DragFloat3("Scale", (float*)&scale, 0.1f, 0.1f, 100.0f);
+                obj->setScale(scale);
+                glm::vec3 angle = obj->angle();
+                ImGui::DragFloat3("Rotation", (float*)&angle, 0.1f);
+                obj->setAngle(angle);
 
-            MaterialPBR& mat = materials[objectIndexGUI];
-            ImGui::ColorEdit3("Albedo", (float*)&mat.albedo);
-            ImGui::SliderFloat("Metallic", &mat.metallic, 0.0f, 1.0f);
-            ImGui::SliderFloat("Roughness", &mat.roughness, 0.0f, 1.0f);
-            ImGui::SliderFloat("Ao", &mat.ao, 0.0f, 1.0f);
+                MaterialPBR& mat = materials[objectIndexGUI];
+                ImGui::ColorEdit3("Albedo", (float*)&mat.albedo);
+                ImGui::SliderFloat("Metallic", &mat.metallic, 0.0f, 1.0f);
+                ImGui::SliderFloat("Roughness", &mat.roughness, 0.0f, 1.0f);
+                ImGui::SliderFloat("Ao", &mat.ao, 0.0f, 1.0f);
+            }
 
             ImGui::InputText("Path", modelPathBuf, 128);
             if (ImGui::Button("Load"))
@@ -478,10 +443,14 @@ void Engine::renderGUI()
                 if (newObj->loadModel(modelPathBuf))
                 {
                     objectIndexGUI = objects.size();
-                    objects.push_back(newObj);
-                    materials.push_back(material0);
+                    this->addObject(newObj);
                 }
                 else delete newObj;
+            }
+            if (ImGui::Button("Remove Current"))
+            {
+                this->removeObject(objectIndexGUI);
+                objectIndexGUI = 0;
             }
         }
         ImGui::End();
@@ -535,4 +504,45 @@ void Engine::renderGUI()
 
     ImGui::Render();
     ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+}
+
+void Engine::addObject(Model* object, MaterialPBR material)
+{
+    objects.push_back(object);
+    materials.push_back(material);
+}
+
+void Engine::removeObject(int objectIndex)
+{
+    if (objectIndex >= objects.size() || objects.size() < 1) return;
+    std::vector<MaterialPBR>::iterator itp = materials.begin();
+    for (std::vector<Model*>::iterator it = objects.begin(); it != objects.end(); it++, itp++)
+    {
+        if (*it == objects[objectIndex])
+        {
+            delete objects[objectIndex];
+            objects.erase(it);
+            materials.erase(itp);
+            break;
+        }
+    }
+}
+
+void Engine::addLight(Light* light)
+{
+    lights.push_back(light);
+}
+
+void Engine::removeLight(int lightIndex)
+{
+    if (lightIndex >= lights.size() || lights.size() < 1) return;
+    for (std::vector<Light*>::iterator it = lights.begin(); it != lights.end(); it++)
+    {
+        if (*it == lights[lightIndex])
+        {
+            delete lights[lightIndex];
+            lights.erase(it);
+            return;
+        }
+    }
 }

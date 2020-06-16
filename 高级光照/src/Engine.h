@@ -14,6 +14,12 @@ public:
 	Engine();
 	~Engine();
 
+	void addObject(Model* object, MaterialPBR material = Material::defaultMaterialPBR);
+	void removeObject(int objectIndex);
+
+	void addLight(Light* light);
+	void removeLight(int lightIndex);
+
 private:
 	void init();
 	void renderLoop();

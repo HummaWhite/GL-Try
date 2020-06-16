@@ -11,7 +11,7 @@ void Mesh::loadMesh(const void* data, int count, std::vector<GLuint> indices, Bu
 void Mesh::loadShape(Shape& shape)
 {
 	m_VA = shape.VA();
-	m_VB = *shape.VB();
+	m_VB = shape.VB();
 }
 
 void Mesh::addTexture(TextureMesh* tex)

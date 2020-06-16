@@ -51,8 +51,9 @@ bool Model::loadModel(const char* filePath)
 		| aiProcess_FindInstances
 		| aiProcess_JoinIdenticalVertices
 		| aiProcess_OptimizeMeshes
-		| aiProcess_ForceGenNormals
-		| aiProcess_FindDegenerates;
+		//| aiProcess_ForceGenNormals
+		//| aiProcess_FindDegenerates
+		;
 	const aiScene* scene = importer.ReadFile(filePath, option);
 
 	std::cout << "Loading Model: " << filePath << " ..." << std::endl;

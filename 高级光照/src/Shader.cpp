@@ -28,19 +28,19 @@ bool Shader::load(const char* filePath)
 		std::string fileString;
 		while (std::getline(file, fileString))
 		{
-			if (fileString.find("//$Vertex") != fileString.npos) break;
+			if (fileString == "//$Vertex") break;
 		}
 		while (std::getline(file, fileString))
 		{
-			if (fileString.find("//$Fragment") != fileString.npos) break;
+			if (fileString == "//$Fragment") break;
 			vertexCode += fileString + '\n';
 		}
 		if (vertexCode == "") throw "Error: vertex shader not found";
 		while (std::getline(file, fileString))
 		{
-			if (fileString.find("//$Geometry") != fileString.npos)
+			if (fileString == "//$Geometry")
 			{
-				includeGeomeryCode = 1;
+				includeGeomeryCode = true;
 				break;
 			}
 			fragmentCode += fileString + '\n';

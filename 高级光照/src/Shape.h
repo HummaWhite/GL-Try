@@ -7,6 +7,7 @@
 #include "VertexArray.h"
 
 #include <iostream>
+#include <fstream>
 #include <vector>
 #include <cmath>
 
@@ -20,11 +21,15 @@ public:
 	int type() const { return m_Type; }
 	int vertexCount() const { return m_VertexCount; }
 	VertexArray& VA() { return m_VA; }
-	Buffer* VB() { return m_VB; }
+	Buffer& VB() { return m_VB; }
 	void addTangents();
 	void setupVA();
 	void set(float* buffer, int type, int vertexCount);
 	void setBuffer(float* buffer);
+
+	void saveObj(const char* path);
+
+public:
 	enum
 	{
 		CUBE = 1,
@@ -46,7 +51,7 @@ private:
 	int m_Type;
 	bool m_WithTangents;
 	int m_VertexCount;
-	Buffer* m_VB;
+	Buffer m_VB;
 	VertexArray m_VA;
 	BufferLayout m_Layout;
 };

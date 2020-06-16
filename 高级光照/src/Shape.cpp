@@ -43,7 +43,6 @@ Shape::Shape() :
 
 Shape::~Shape()
 {
-	if (m_VB != nullptr) delete m_VB;
 }
 
 Shape::Shape(int vertexCount, int type) :
@@ -113,11 +112,10 @@ void Shape::setupVA()
 {
 	if (m_Buffer == nullptr)
 	{
-		std::cout << "Shape: Do not set up VA repeatedly" << std::endl;
+		std::cout << "Error: Shape::setupVA: Do not set up VA repeatedly" << std::endl;
 		return;
 	}
-	m_VB = new Buffer;
-	m_VB->allocate(m_VertexCount * m_Layout.stride(), m_Buffer, m_VertexCount);
+	m_VB.allocate(m_VertexCount * m_Layout.stride(), m_Buffer, m_VertexCount);
 	m_VA.addBuffer(m_VB, m_Layout);
 	delete[]m_Buffer;
 }
@@ -132,6 +130,55 @@ void Shape::set(float* buffer, int type, int vertexCount)
 void Shape::setBuffer(float* buffer)
 {
 	m_Buffer = buffer;
+}
+
+void Shape::saveObj(const char* path)
+{
+	if (m_Buffer == nullptr)
+	{
+		std::cout << "Error: Shape::ExportObj: No data" << std::endl;
+		return;
+	}
+
+	if (m_WithTangents)
+	{
+		std::cout << "Error: Shape::ExportObj: Already added tangents" << std::endl;
+		return;
+	}
+
+	std::ofstream file;
+	file.open(path);
+
+	for (int i = 0; i < m_VertexCount; i++)
+	{
+		file << "v " << std::fixed << m_Buffer[i * 8 + 0] << " " << m_Buffer[i * 8 + 2] << " " << m_Buffer[i * 8 + 1] << std::endl;
+	}
+
+	for (int i = 0; i < m_VertexCount; i++)
+	{
+		file << "vt " << std::fixed << m_Buffer[i * 8 + 3] << " " << m_Buffer[i * 8 + 4] << std::endl;
+	}
+
+	for (int i = 0; i < m_VertexCount; i++)
+	{
+		float x = m_Buffer[i * 8 + 5];
+		x = _isnan(x) ? 0.0f : x;
+		float y = m_Buffer[i * 8 + 7];
+		y = _isnan(y) ? 0.0f : y;
+		float z = m_Buffer[i * 8 + 6];
+		z = _isnan(z) ? 1.0f : z;
+		file << "vn " << std::fixed << x << " " << y << " " << z << std::endl;
+	}
+
+	for (int i = 1; i <= m_VertexCount; i += 3)
+	{
+		file << "f ";
+		file << i + 0 << "/" << i + 0 << "/" << i + 0 << " ";
+		file << i + 1 << "/" << i + 1 << "/" << i + 1 << " ";
+		file << i + 2 << "/" << i + 2 << "/" << i + 2 << " ";
+		file << std::endl;
+	}
+	file.close();
 }
 
 Cube::Cube() :
