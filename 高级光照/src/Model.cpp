@@ -116,14 +116,14 @@ void Model::setScale(float xScale, float yScale, float zScale)
 	m_Scale = glm::vec3(xScale, yScale, zScale);
 }
 
-void Model::setAngle(glm::vec3 angle)
+void Model::setRotation(glm::vec3 angle)
 {
-	m_Angle = angle;
+	m_Rotation = angle;
 }
 
-void Model::setAngle(float yaw, float pitch, float roll)
+void Model::setRotation(float yaw, float pitch, float roll)
 {
-	m_Angle = glm::vec3(yaw, pitch, roll);
+	m_Rotation = glm::vec3(yaw, pitch, roll);
 }
 
 void Model::setSize(float size)
@@ -135,10 +135,10 @@ glm::mat4 Model::modelMatrix() const
 {
 	glm::mat4 model(1.0f);
 	model = glm::translate(model, m_Pos);
+	model = glm::rotate(model, glm::radians(m_Rotation.x), glm::vec3(0.0f, 0.0f, 1.0f));
+	model = glm::rotate(model, glm::radians(m_Rotation.y), glm::vec3(1.0f, 0.0f, 0.0f));
+	model = glm::rotate(model, glm::radians(m_Rotation.z), glm::vec3(0.0f, 1.0f, 0.0f));
 	model = glm::scale(model, m_Scale);
-	model = glm::rotate(model, glm::radians(m_Angle.x), glm::vec3(0.0f, 0.0f, 1.0f));
-	model = glm::rotate(model, glm::radians(m_Angle.y), glm::vec3(1.0f, 0.0f, 0.0f));
-	model = glm::rotate(model, glm::radians(m_Angle.z), glm::vec3(0.0f, 1.0f, 0.0f));
 	if (m_LoadedFromFile) model = model * constRot;
 	return model;
 }

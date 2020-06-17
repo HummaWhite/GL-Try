@@ -1,17 +1,14 @@
 #include "SceneLoader.h"
 
-#include <fstream>
-
-void SceneLoader::loadScene(Engine* engine, const char* filePath)
+bool SceneLoader::loadScene(std::vector<Model*>& models, std::vector<MaterialPBR>& materials, std::vector<Light*>& lights, const char* filePath)
 {
-	if (engine == nullptr) return;
 	std::fstream file(filePath);
 	std::cout << "Loading Scene: " << filePath << std::endl;
 
 	if (!file.is_open())
 	{
 		std::cout << "Error: Scene file not found" << std::endl;
-		exit(-1);
+		return false;
 	}
 
 	std::string section;
@@ -24,9 +21,11 @@ void SceneLoader::loadScene(Engine* engine, const char* filePath)
 	file >> objectsCount;
 	for (int i = 0; i < objectsCount; i++)
 	{
+		std::cout << "  Object #" << i << std::endl;
 		std::string modelPath, tmp;
 		glm::vec3 modelPos(0.0f);
-		float modelSize(1.0f);
+		glm::vec3 modelScale(1.0f);
+		glm::vec3 modelRot(0.0f);
 		MaterialPBR modelMaterial(Material::defaultMaterialPBR);
 		file >> modelPath;
 		file >> tmp;
@@ -37,7 +36,12 @@ void SceneLoader::loadScene(Engine* engine, const char* filePath)
 		file >> tmp;
 		if (tmp == "S")
 		{
-			file >> modelSize;
+			file >> modelScale.x >> modelScale.y >> modelScale.z;
+		}
+		file >> tmp;
+		if (tmp == "R")
+		{
+			file >> modelRot.x >> modelRot.y >> modelRot.z;
 		}
 		file >> tmp;
 		if (tmp == "M")
@@ -45,13 +49,15 @@ void SceneLoader::loadScene(Engine* engine, const char* filePath)
 			file >> modelMaterial.albedo.r >> modelMaterial.albedo.g >> modelMaterial.albedo.b;
 			file >> modelMaterial.metallic >> modelMaterial.roughness >> modelMaterial.ao;
 		}
-		Model* model = new Model(modelPath.c_str(), modelPos, modelSize);
-		engine->addObject(model, modelMaterial);
+		Model* model = new Model(modelPath.c_str(), modelPos);
+		model->setScale(modelScale);
+		model->setRotation(modelRot);
+		models.push_back(model);
+		materials.push_back(modelMaterial);
 	}
 
 	while (std::getline(file, section))
 	{
-		std::cout << section << std::endl;
 		if (section == "#Lights") break;
 	}
 
@@ -59,12 +65,84 @@ void SceneLoader::loadScene(Engine* engine, const char* filePath)
 	file >> lightCount;
 	for (int i = 0; i < lightCount; i++)
 	{
-		glm::vec3 lightPos, lightColor;
-		file >> lightPos.x >> lightPos.y >> lightPos.z;
-		file >> lightColor.x >> lightColor.y >> lightColor.z;
-		Light* light = new Light(lightPos, lightColor);
-		engine->addLight(light);
+		std::cout << "  Light #" << i << std::endl;
+		std::string tmp;
+		glm::vec3 lightPos(0.0f), lightColor(1.0f);
+		glm::vec3 lightDir(0.0f, 0.0f, -1.0f);
+		float cutoff(180.0f), outerCutoff(180.0f);
+		float size(0.3f), strength(4.0f);
+		file >> tmp;
+		if (tmp == "P")
+		{
+			file >> lightPos.x >> lightPos.y >> lightPos.z;
+		}
+		file >> tmp;
+		if (tmp == "C")
+		{
+			file >> lightColor.x >> lightColor.y >> lightColor.z;
+		}
+		file >> tmp;
+		if (tmp == "D")
+		{
+			file >> lightDir.x >> lightDir.y >> lightDir.z;
+		}
+		file >> tmp;
+		if (tmp == "R")
+		{
+			file >> cutoff >> outerCutoff;
+		}
+		file >> tmp;
+		if (tmp == "S")
+		{
+			file >> size >> strength;
+		}
+		Light* light = new Light(lightPos, lightColor, lightDir, cutoff, outerCutoff);
+		light->size = size, light->strength = strength;
+		lights.push_back(light);
 	}
 
 	file.close();
+	std::cout << "Loading Scene Done." << std::endl;
+	return true;
+}
+
+bool SceneLoader::saveScene(std::vector<Model*>& models, std::vector<MaterialPBR>& materials, std::vector<Light*>& lights, const char* filePath)
+{
+	std::ofstream saveFile(filePath);
+
+	if (!saveFile.is_open())
+	{
+		return false;
+	}
+
+	saveFile << "#Objects" << std::endl;
+	saveFile << models.size() << std::endl;
+	for (int i = 0; i < models.size(); i++)
+	{
+		Model* mod = models[i];
+		saveFile << mod->name() << std::endl;
+		saveFile << "P " << std::fixed << mod->pos().x << " " << mod->pos().y << " " << mod->pos().z << std::endl;
+		saveFile << "S " << std::fixed << mod->scale().x << " " << mod->scale().y << " " << mod->scale().z << std::endl;
+		saveFile << "R " << std::fixed << mod->rotation().x << " " << mod->rotation().y << " " << mod->rotation().z << std::endl;
+
+		MaterialPBR mat = materials[i];
+		saveFile << "M " << std::fixed << mat.albedo.r << " " << mat.albedo.g << " " << mat.albedo.b << " ";
+		saveFile << mat.metallic << " " << mat.roughness << " " << mat.ao << std::endl;
+		saveFile << std::endl;
+	}
+
+	saveFile << std::endl << "#Lights" << std::endl;
+	saveFile << lights.size() << std::endl;
+	for (auto i : lights)
+	{
+		saveFile << "P " << std::fixed << i->pos.x << " " << i->pos.y << " " << i->pos.z << std::endl;
+		saveFile << "C " << std::fixed << i->color.r << " " << i->color.g << " " << i->color.b << std::endl;
+		saveFile << "D " << std::fixed << i->dir.x << " " << i->dir.y << " " << i->dir.z << std::endl;
+		saveFile << "R " << std::fixed << i->cutoff << " " << i->outerCutoff << std::endl;
+		saveFile << "S " << std::fixed << i->size << " " << i->strength << std::endl;
+		saveFile << std::endl;
+	}
+
+	saveFile.close();
+	return true;
 }

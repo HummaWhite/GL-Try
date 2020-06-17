@@ -1,6 +1,7 @@
 #pragma once
 
 #include "EngineBase.h"
+#include "SceneLoader.h"
 
 const float SHADOW_FARPLANE = 100.0f;
 const float SHADOW_NEARPLANE = 0.1f;
@@ -20,6 +21,8 @@ public:
 	void addLight(Light* light);
 	void removeLight(int lightIndex);
 
+	void clearScene();
+
 private:
 	void init();
 	void renderLoop();
@@ -33,8 +36,7 @@ private:
 	void processResize(int width, int height);
 
 	void setupFrameBuffersAndTextures();
-	void setupLights();
-	void setupObjects();
+	void setupScene();
 	void setupShaders();
 	void setupGUI();
 
@@ -81,6 +83,8 @@ private:
 	int lightIndexGUI;
 
 	bool enablePreZCull;
+
+	std::string currentScene;
 
 private:
 	bool cursorDisabled;

@@ -28,13 +28,13 @@ public:
 	void rotateWorldSpace(float abgle, glm::vec3 axis);
 	void setScale(glm::vec3 scale);
 	void setScale(float xScale, float yScale, float zScale);
-	void setAngle(glm::vec3 angle);
-	void setAngle(float yaw, float pitch, float roll);
+	void setRotation(glm::vec3 angle);
+	void setRotation(float yaw, float pitch, float roll);
 	void setSize(float size);
 
 	glm::vec3 pos() const { return m_Pos; }
 	glm::vec3 scale() const { return m_Scale; }
-	glm::vec3 angle() const { return m_Angle; }
+	glm::vec3 rotation() const { return m_Rotation; }
 	glm::mat4 modelMatrix() const;
 	std::string name() const { return m_Name; }
 
@@ -48,7 +48,7 @@ private:
 	std::vector<Mesh*> m_Meshes;
 	glm::vec3 m_Pos;
 	glm::vec3 m_Scale;
-	glm::vec3 m_Angle;
+	glm::vec3 m_Rotation;
 	glm::mat4 m_RotMatrix;
 	bool m_LoadedFromFile;
 	std::string m_Name;

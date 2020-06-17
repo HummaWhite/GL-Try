@@ -1,15 +1,12 @@
 #include "Engine.h"
 
-const MaterialPBR material1 =
-{
-    { 1.0f, 1.0f, 1.0f }, 0.0f, 1.0f, 0.5f
-};
-
 char modelPathBuf[128] = { 0 };
 char shaderPathBuf[128] = { 0 };
+char scenePathBuf[128] = { 0 };
 int windowSizeBuf[2] = { 0 };
 const char* defaultModelPath = "res/model/";
 const char* defaultShaderPath = "res/shader/";
+const char* defaultScene = "res/test.sc";
 
 Engine::Engine() :
     EngineBase(),
@@ -32,7 +29,8 @@ Engine::Engine() :
     F1Pressed(false),
     enablePreZCull(true),
     objectIndexGUI(0),
-    lightIndexGUI(0)
+    lightIndexGUI(0),
+    currentScene(defaultScene)
 {
     windowSizeBuf[0] = this->windowWidth();
     windowSizeBuf[1] = this->windowHeight();
@@ -49,9 +47,8 @@ void Engine::init()
     glEnable(GL_DEPTH_TEST);
     glDepthFunc(GL_LEQUAL);
 
-    this->setupLights();
     this->setupFrameBuffersAndTextures();
-    this->setupObjects();
+    this->setupScene();
     this->setupShaders();
     this->setupGUI();
 
@@ -213,11 +210,7 @@ void Engine::setupFrameBuffersAndTextures()
     this->resetScreenBuffer(this->windowWidth(), this->windowHeight());
 }
 
-void Engine::setupLights()
-{
-}
-
-void Engine::setupObjects()
+void Engine::setupScene()
 {
     square = new Square();
     square->addTangents();
@@ -228,6 +221,11 @@ void Engine::setupObjects()
 
     screenVB.allocate(sizeof(SCREEN_COORD), SCREEN_COORD, 6);
     screenVA.addBuffer(screenVB, LAYOUT_POS2);
+
+    if (!SceneLoader::loadScene(objects, materials, lights, "res/test.sc"))
+    {
+        this->setTerminateStatus(true);
+    }
 }
 
 void Engine::setupShaders()
@@ -390,10 +388,13 @@ void Engine::renderGUI()
                 ImGui::Text("Select Light");
                 ImGui::SliderInt("Light", &lightIndexGUI, 0, lights.size() - 1);
                 Light* lit = lights[lightIndexGUI];
-                ImGui::ColorEdit3("Color0", (float*)&lit->color);
-                ImGui::DragFloat("Size0", &lit->size, 0.01f, 0.01f, 3.0f);
-                ImGui::DragFloat("Strength0", &lit->strength, 0.1f, -10.0f, 10.0f);
-                ImGui::SliderFloat3("Pos0", (float*)&lit->pos, -20.0f, 20.0f);
+                ImGui::ColorEdit3("Color", (float*)&lit->color);
+                ImGui::DragFloat3("Direction", (float*)&lit->dir, 0.01f, -1.0f, 1.0f);
+                ImGui::DragFloat("Cutoff", &lit->cutoff, 0.1f, 0.0f, lit->outerCutoff);
+                ImGui::DragFloat("OuterCutoff", &lit->outerCutoff, 0.1f, lit->cutoff, 180.0f);
+                ImGui::DragFloat("Size", &lit->size, 0.01f, 0.01f, 3.0f);
+                ImGui::DragFloat("Strength", &lit->strength, 0.01f, -10.0f, 10.0f);
+                ImGui::DragFloat3("Position", (float*)&lit->pos, 0.1f, -20.0f, 20.0f);
             }
             if (ImGui::Button("New Light"))
             {
@@ -425,9 +426,9 @@ void Engine::renderGUI()
                 glm::vec3 scale = obj->scale();
                 ImGui::DragFloat3("Scale", (float*)&scale, 0.1f, 0.1f, 100.0f);
                 obj->setScale(scale);
-                glm::vec3 angle = obj->angle();
-                ImGui::DragFloat3("Rotation", (float*)&angle, 0.1f);
-                obj->setAngle(angle);
+                glm::vec3 rotation = obj->rotation();
+                ImGui::DragFloat3("Rotation", (float*)&rotation, 0.1f);
+                obj->setRotation(rotation);
 
                 MaterialPBR& mat = materials[objectIndexGUI];
                 ImGui::ColorEdit3("Albedo", (float*)&mat.albedo);
@@ -454,11 +455,11 @@ void Engine::renderGUI()
             }
         }
         ImGui::End();
-        ImGui::Begin("Modify Main RenderPass Shader");
+        ImGui::Begin("Shader & Scene");
         {
-            ImGui::Text("Current File:");
+            ImGui::Text("Current Main Pass Shader:");
             ImGui::Text(shader->name().c_str());
-            ImGui::InputText("Path", shaderPathBuf, 128);
+            ImGui::InputText("Shader File", shaderPathBuf, 128);
             if (ImGui::Button("Reload"))
             {
                 delete shader;
@@ -467,6 +468,21 @@ void Engine::renderGUI()
                 {
                     shader->load("res/shader/PBR.shader");
                 }
+            }
+            ImGui::Text("Current Scene File:");
+            ImGui::Text(currentScene.c_str());
+            ImGui::InputText("Scene File", scenePathBuf, 128);
+            if (ImGui::Button("Reload Scene"))
+            {
+                this->clearScene();
+                if (!SceneLoader::loadScene(objects, materials, lights, scenePathBuf))
+                {
+                    SceneLoader::loadScene(objects, materials, lights, defaultScene);
+                }
+            }
+            if (ImGui::Button("Save"))
+            {
+                SceneLoader::saveScene(objects, materials, lights, scenePathBuf);
             }
         }
         ImGui::End();
@@ -545,4 +561,13 @@ void Engine::removeLight(int lightIndex)
             return;
         }
     }
+}
+
+void Engine::clearScene()
+{
+    for (auto i : objects) delete i;
+    objects.clear();
+    for (auto i : lights) delete i;
+    lights.clear();
+    materials.clear();
 }

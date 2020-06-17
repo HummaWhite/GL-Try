@@ -38,16 +38,16 @@ public:
 	glm::vec3 dir;
 	glm::vec3 color;
 	glm::vec3 attenuation;
-	float cutOff;
-	float outerCutOff;
+	float cutoff;
+	float outerCutoff;
 	float strength;
 	float size;
 	GLuint type;
 	Light(int _type, glm::vec3 _dir, glm::vec3 _color) :
 		type(DIRECTIONAL), dir(_dir), color(_color) {}
 	Light(glm::vec3 _pos, glm::vec3 _color, glm::vec3 _dir = glm::vec3(0.0f, 0.0f, -1.0f), float _cutOff = 180.0f, float _outerCutOff = 180.0f, GLuint attenLevel = -1) :
-		type(POINT), pos(_pos), dir(_dir), color(_color), cutOff(cos(glm::radians(_cutOff))),
-		outerCutOff(cos(glm::radians(_outerCutOff))), strength(4.0f), size(0.3f)
+		type(POINT), pos(_pos), dir(_dir), color(_color), cutoff(_cutOff),
+		outerCutoff(_outerCutOff), strength(4.0f), size(0.3f)
 	{
 		setAttenuationLevel(attenLevel);
 	}
@@ -62,5 +62,3 @@ public:
 		attenuation = ATTENUATION[level];
 	}
 };
-
-typedef std::vector<Light*> LightGroup;

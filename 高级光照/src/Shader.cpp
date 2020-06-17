@@ -138,7 +138,7 @@ void Shader::setTexture(const char* name, const Texture& tex, int unit) const
 	setUniform1i(name, unit);
 }
 
-void Shader::setLight(const LightGroup& lightGroup)
+void Shader::setLight(const std::vector<Light*>& lightGroup)
 {
 	GLuint dirCount(0), pointCount(0);
 	char tmp[50];
@@ -161,10 +161,10 @@ void Shader::setLight(const LightGroup& lightGroup)
 			setUniformVec3(tmp, light->dir);
 			sprintf(tmp, "pointLights[%d].color", pointCount);
 			setUniformVec3(tmp, light->color);
-			sprintf(tmp, "pointLights[%d].cutOff", pointCount);
-			setUniform1f(tmp, light->cutOff);
-			sprintf(tmp, "pointLights[%d].outerCutOff", pointCount);
-			setUniform1f(tmp, light->outerCutOff);
+			sprintf(tmp, "pointLights[%d].cutoff", pointCount);
+			setUniform1f(tmp, cos(glm::radians(light->cutoff)));
+			sprintf(tmp, "pointLights[%d].outerCutoff", pointCount);
+			setUniform1f(tmp, cos(glm::radians(light->outerCutoff)));
 			sprintf(tmp, "pointLights[%d].attenuation", pointCount);
 			setUniformVec3(tmp, light->attenuation);
 			sprintf(tmp, "pointLights[%d].strength", pointCount);
