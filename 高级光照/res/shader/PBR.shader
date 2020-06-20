@@ -79,8 +79,8 @@ struct PointLight
     vec3 dir;
     vec3 color;
     vec3 attenuation;
-    float cutOff;
-    float outerCutOff;
+    float cutoff;
+    float outerCutoff;
     float strength;
     float size;
 };
@@ -134,12 +134,13 @@ void findBlocker(
 
     float blockerSum = 0;
     numBlockers = 0;
+	float bias = 0.00;
 
     for (int i = 0; i < BLOCKER_SEARCH_NUM_SAMPLES; i++)
     {
         float shadowMapDepth = texture(shadowCubeMap, uv + sampleDisk[i] * searchWidth).r;
         shadowMapDepth *= shadowFarPlane;
-        if (shadowMapDepth < zReceiver)
+        if (shadowMapDepth + bias < zReceiver)
         {
             blockerSum += shadowMapDepth;
             numBlockers += 1.0;
@@ -151,12 +152,12 @@ void findBlocker(
 float PCFcubeMap(samplerCube shadowCubeMap, vec3 uv, float zReceiver, float diskRad)
 {
     float sum = 0;
-    float bias = 0.12;
+    float bias = 1.02;
     for (int i = 0; i < PCF_NUM_SAMPLES; i++)
     {
         float shadowMapDepth = texture(shadowCubeMap, uv + sampleDisk[i] * diskRad).r;
         shadowMapDepth *= shadowFarPlane;
-        if (zReceiver > shadowMapDepth + bias) sum += 1.0;
+        if (zReceiver > shadowMapDepth * bias) sum += 1.0;
     }
     return sum / float(PCF_NUM_SAMPLES);
 }
@@ -172,7 +173,7 @@ float PCSScubeMap(samplerCube shadowCubeMap, vec3 lightToFrag, float lightSizeUV
 
     if (numBlockers < 1.0) return 0.0;
 
-    float filterRad = 0.001 + penumbraSize(zReceiver, avgBlockerDepth) * 0.1;
+    float filterRad = 0.03 + penumbraSize(zReceiver, avgBlockerDepth) * 0.1;
     return PCFcubeMap(shadowCubeMap, lightToFrag, zReceiver, filterRad);
 }
 
@@ -272,8 +273,8 @@ vec3 calcPointLight(int index, vec3 N, vec3 fragPos, vec3 V)
     vec3 Lo = (kD * material.albedo / Pi + specular) * radiance * NdotL;
 
     float theta = dot(L, normalize(-light.dir));
-    float epsilon = light.cutOff - light.outerCutOff;
-    float intensity = clamp((theta - light.outerCutOff) / epsilon, 0.0, 1.0);
+    float epsilon = light.cutoff - light.outerCutoff;
+    float intensity = clamp((theta - light.outerCutoff) / epsilon, 0.0, 1.0);
     float shadow = float(shadowOn) * PCSScubeMap(shadowMapPoint[index], fragPos - light.pos, light.size);
 
     return Lo * (1.0 - shadow) * intensity;
@@ -290,7 +291,7 @@ vec2 sphereCoord(vec3 V, vec3 norm)
 
 void preZCull()
 {
-    const float cullEPS = 0.0001;
+    const float cullEPS = 0.01;
     vec2 scrCoord = gl_FragCoord.xy / viewport;
     float minDepth = texture(preZTex, scrCoord).r * preZFarPlane;
     if (fs_in.fragScrPos.z > minDepth + cullEPS) discard;
@@ -319,10 +320,9 @@ void main()
     result = result / (result + vec3(1.0));
 
     result *= useTexture ? texture(ordTex, texCoord).rgb : vec3(1.0f);
-    vec3 reflColor = texture(material.reflMap, sphereCoord(V, newNorm)).rgb;
-    float reflStrength = material.reflStrength;
-    result = useReflMap ? reflStrength * reflColor + (1.0 - reflStrength) * result : result;
-
+    //vec3 reflColor = texture(material.reflMap, sphereCoord(V, newNorm)).rgb;
+    //float reflStrength = material.reflStrength;
+    //result = useReflMap ? reflStrength * reflColor + (1.0 - reflStrength) * result : result;
     //result = result * 0.0001 + DEBUG_COLOR;
     
     FragColor = vec4(result, 1.0);
