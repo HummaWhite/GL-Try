@@ -20,24 +20,29 @@ class Camera
 {
 public:
 	Camera(glm::vec3 pos = glm::vec3(0, 0, 0), glm::vec3 angle = glm::radians(glm::vec3(90.0f, 0.0f, 0.0f)))
-		:m_Pos(pos), m_Angle(angle), m_FOV(CAMERA_FOV), m_CameraUp(VEC_UP){}
+		:m_Pos(pos), m_Angle(angle), m_FOV(CAMERA_FOV), m_CameraUp(VEC_UP), m_Near(0.1f), m_Far(100.0f) {}
 
 	void move(glm::vec3 vect);
 	void move(GLuint key);
 	void roll(float angle);
 	void rotate(glm::vec3 angle);
 	void changeFOV(float offset);
+	void setFOV(float fov);
 	void lookAt(glm::vec3 pos);
 	void setPos(glm::vec3 pos) { m_Pos = pos; }
 	void setAngle(glm::vec3 angle) { m_Angle = glm::radians(angle); }
 	void setDir(glm::vec3 dir);
+	void setPlanes(float near, float far) { m_Near = near, m_Far = far; }
 
 	float FOV() const { return m_FOV; }
+	float nearPlane() const { return m_Near; }
+	float farPlane() const { return m_Far; }
 	glm::vec3 pos() const { return m_Pos; }
 	glm::vec3 angle() const { return m_Angle; }
 	glm::vec3 pointing() const;
-	glm::mat4 getViewMatrix();
-	glm::mat4 getViewMatrix(glm::vec3 targetPos);
+	glm::mat4 viewMatrix() const;
+	glm::mat4 viewMatrix(glm::vec3 focus) const;
+	glm::mat4 projMatrix(int width, int height) const;
 
 private:
 	glm::vec3 m_Pos;
@@ -45,4 +50,6 @@ private:
 	glm::vec3 m_Pointing;
 	glm::vec3 m_CameraUp;
 	float m_FOV;
+	float m_Near;
+	float m_Far;
 };

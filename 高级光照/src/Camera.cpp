@@ -66,6 +66,13 @@ void Camera::changeFOV(float offset)
 	if (m_FOV < 15.0) m_FOV = 15.0;
 }
 
+void Camera::setFOV(float fov)
+{
+	m_FOV = fov;
+	if (m_FOV > 90.0f) m_FOV = 90.0f;
+	if (m_FOV < 15.0f) m_FOV = 15.0f;
+}
+
 void Camera::lookAt(glm::vec3 pos)
 {
 	setDir(pos - m_Pos);
@@ -88,7 +95,7 @@ glm::vec3 Camera::pointing() const
 	return glm::normalize(glm::vec3(aX, aY, aZ));
 }
 
-glm::mat4 Camera::getViewMatrix()
+glm::mat4 Camera::viewMatrix() const
 {
 	float aX = cos(m_Angle.y) * cos(m_Angle.x);
 	float aY = cos(m_Angle.y) * sin(m_Angle.x);
@@ -98,8 +105,14 @@ glm::mat4 Camera::getViewMatrix()
 	return view;
 }
 
-glm::mat4 Camera::getViewMatrix(glm::vec3 targetPos)
+glm::mat4 Camera::viewMatrix(glm::vec3 focus) const
 {
-	glm::mat4 view = glm::lookAt(m_Pos, targetPos, m_CameraUp);
+	glm::mat4 view = glm::lookAt(m_Pos, focus, m_CameraUp);
 	return view;
+}
+
+glm::mat4 Camera::projMatrix(int width, int height) const
+{
+	glm::mat4 proj = glm::perspective(glm::radians(m_FOV), (float)width / (float)height, m_Near, m_Far);
+	return proj;
 }

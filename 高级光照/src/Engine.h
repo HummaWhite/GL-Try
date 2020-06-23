@@ -40,8 +40,9 @@ private:
 	void setupShaders();
 	void setupGUI();
 
-	void ZPass(FrameBuffer& zBuffer, std::vector<Model*> objects);
-	void shadowPass(ShadowMap* shadowMaps, std::vector<Light*>& lights, std::vector<Model*>& objects);
+	void ZPass(DepthMap &zMap, std::vector<Model*> objects);
+	void shadowPass(DepthMap* shadowMaps, std::vector<Light*>& lights, std::vector<Model*>& objects);
+	void ssShadowPass(DepthMap* ssShadow, DepthMap* ssDepth, DepthMap* shadowMaps);
 	void renderPass();
 	void postPass();
 	void renderGUI();
@@ -53,7 +54,8 @@ private:
 	std::vector<MaterialPBR> materials;
 	Shader* shader, scrShader, skyboxShader, lightShader, shadowShader, zShader;
 	Skybox skybox;
-	ShadowMap shadowMapPoint[MAX_LIGHTS];
+	DepthMap shadowMapPoint[MAX_LIGHTS];
+	DepthMap* ZMap, * ssShadowMap;
 
 	FrameBuffer* screenFB;
 	RenderBuffer* screenRB;
@@ -61,9 +63,6 @@ private:
 
 	Buffer screenVB;
 	VertexArray screenVA;
-
-	FrameBuffer* ZBuffer;
-	Texture* ZBufferTex;
 
 	Shape* square;
 	Shape* sphere;
@@ -82,7 +81,8 @@ private:
 	int objectIndexGUI;
 	int lightIndexGUI;
 
-	bool enablePreZCull;
+	bool enableZCull;
+	bool forceFlatNormals;
 
 	std::string currentScene;
 
