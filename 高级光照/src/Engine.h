@@ -40,9 +40,8 @@ private:
 	void setupShaders();
 	void setupGUI();
 
-	void ZPass(DepthMap &zMap, std::vector<Model*> objects);
-	void shadowPass(DepthMap* shadowMaps, std::vector<Light*>& lights, std::vector<Model*>& objects);
-	void ssShadowPass(DepthMap* ssShadow, DepthMap* ssDepth, DepthMap* shadowMaps);
+	void ssZPass();
+	void shadowPass();
 	void renderPass();
 	void postPass();
 	void renderGUI();
@@ -52,10 +51,10 @@ private:
 	std::vector<Model*> objects;
 	std::vector<Light*> lights;
 	std::vector<MaterialPBR> materials;
-	Shader* shader, scrShader, skyboxShader, lightShader, shadowShader, zShader;
+	Shader* shader, scrShader, lightShader, shadowShader, zShader;
 	Skybox skybox;
 	DepthMap shadowMapPoint[MAX_LIGHTS];
-	DepthMap* ZMap, * ssShadowMap;
+	DepthMap* ssZMap;
 
 	FrameBuffer* screenFB;
 	RenderBuffer* screenRB;

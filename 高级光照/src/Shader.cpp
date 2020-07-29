@@ -112,6 +112,11 @@ void Shader::setUniform4f(const char* name, float v0, float v1, float v2, float 
 	glProgramUniform4f(m_ID, getUniformLocation(m_ID, name), v0, v1, v2, v3);
 }
 
+void Shader::setUniform1d(const char* name, double v) const
+{
+	glProgramUniform1d(m_ID, getUniformLocation(m_ID, name), v);
+}
+
 void Shader::setUniformVec3(const char* name, const glm::vec3& vec) const
 {
 	glProgramUniform3f(m_ID, getUniformLocation(m_ID, name), vec.x, vec.y, vec.z);
@@ -132,10 +137,25 @@ void Shader::setUniformMat4(const char* name, const glm::mat4& mat) const
 	glProgramUniformMatrix4fv(m_ID, getUniformLocation(m_ID, name), 1, GL_FALSE, glm::value_ptr(mat));
 }
 
-void Shader::setTexture(const char* name, const Texture& tex, int unit) const
+void Shader::setUniformVec2d(const char* name, const glm::dvec2& vec) const
 {
-	glBindTextureUnit(unit, tex.ID());
-	setUniform1i(name, unit);
+	glProgramUniform2dv(m_ID, getUniformLocation(m_ID, name), 1, glm::value_ptr(vec));
+}
+
+void Shader::setTexture(const char* name, const Texture& tex)
+{
+	std::string texName(name);
+	std::map<std::string, int>::iterator it = m_TextureMap.find(texName);
+
+	int texUnit = 0;
+	if (it == m_TextureMap.end())
+	{
+		texUnit = m_TextureMap.size();
+		m_TextureMap[texName] = texUnit;
+	}
+	
+	glBindTextureUnit(texUnit, tex.ID());
+	setUniform1i(name, texUnit);
 }
 
 void Shader::setLight(const std::vector<Light*>& lightGroup)
@@ -209,6 +229,11 @@ GLint Shader::getUniformLocation(GLuint programID, const char* name)
 	if (location == -1)
 		std::cout << "Error: unable to locate the uniform::" << name << " in shader number: " << programID << std::endl;
 	return location;
+}
+
+void Shader::resetTextureMap()
+{
+	m_TextureMap.clear();
 }
 
 void Shader::compileShader(const char* vertexSource, const char* fragmentSource, const char* geometrySource)

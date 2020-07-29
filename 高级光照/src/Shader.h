@@ -6,6 +6,8 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
+#include <vector>
+#include <map>
 
 #include "Lighting.h"
 #include "Texture.h"
@@ -26,11 +28,14 @@ public:
 	void setUniform2f(const char* name, float v0, float v1) const;
 	void setUniform3f(const char* name, float v0, float v1, float v2) const;
 	void setUniform4f(const char* name, float v0, float v1, float v2, float v3) const;
+	void setUniform1d(const char* name, double v) const;
+	void setUniformVec2(const char* name, const glm::vec2& vec) const;
 	void setUniformVec3(const char* name, const glm::vec3& vec) const;
 	void setUniformVec4(const char* name, const glm::vec4& vec) const;
 	void setUniformMat3(const char* name, const glm::mat3& mat) const;
 	void setUniformMat4(const char* name, const glm::mat4& mat) const;
-	void setTexture(const char* name, const Texture& tex, int unit) const;
+	void setUniformVec2d(const char* name, const glm::dvec2& vec) const;
+	void setTexture(const char* name, const Texture& tex);
 	void setLight(const std::vector<Light*> & lightGroup);
 	void setMaterial(const glm::vec3& albedo, float metallic, float roughness, float ao);
 	void setMaterial(const MaterialPhong& material);
@@ -39,8 +44,12 @@ public:
 
 	std::string name() const { return m_Name; }
 
+	void resetTextureMap();
+
 private:
 	void compileShader(const char* vertexSource, const char* fragmentSource, const char* geometrySource);
 	GLuint m_ID;
 	std::string m_Name;
+
+	std::map<std::string, int> m_TextureMap;
 };

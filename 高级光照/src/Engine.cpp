@@ -62,9 +62,12 @@ void Engine::renderLoop()
 
     renderer.clear(0.0f, 0.0f, 0.0f);
 
-    if (shadowOn) this->shadowPass(shadowMapPoint, lights, objects);
-    
-    this->ZPass(*ZMap, objects);
+    this->ssZPass();
+
+    if (shadowOn)
+    {
+        this->shadowPass();
+    }
     
     this->renderPass();
     
@@ -74,8 +77,8 @@ void Engine::renderLoop()
     
     VerticalSyncStatus(verticalSync);
 
-    glfwSwapBuffers(this->window());
-    glfwPollEvents();
+    this->swapBuffers();
+    this->display();
 }
 
 void Engine::terminate()
@@ -85,7 +88,7 @@ void Engine::terminate()
         delete screenFB;
         delete screenRB;
         delete screenFBTex;
-        delete ZMap;
+        delete ssZMap;
     }
 
     ImGui_ImplOpenGL3_Shutdown();
@@ -100,12 +103,12 @@ void Engine::resetScreenBuffer(int width, int height)
         delete screenFB;
         delete screenRB;
         delete screenFBTex;
-        delete ZMap;
+        delete ssZMap;
     }
     screenFB = new FrameBuffer;
     screenRB = new RenderBuffer;
     screenFBTex = new Texture;
-    ZMap = new DepthMap;
+    ssZMap = new DepthMap;
 
     screenFB->generate(width, height);
     screenRB->allocate(GL_DEPTH24_STENCIL8, width, height);
@@ -113,14 +116,13 @@ void Engine::resetScreenBuffer(int width, int height)
     screenFB->attachRenderBuffer(GL_DEPTH_STENCIL_ATTACHMENT, *screenRB);
     screenFB->attachTexture(GL_COLOR_ATTACHMENT0, *screenFBTex);
 
-    ZMap->init(DepthMap::SCREEN_SPACE, width, height, GL_DEPTH_COMPONENT32F);
+    ssZMap->init(DepthMap::SCREEN_SPACE, width, height, GL_DEPTH_COMPONENT32F);
 }
 
 void Engine::processKey(int key, int scancode, int action, int mode)
 {
     if (this->getKeyStatus(GLFW_KEY_ESCAPE) == GLFW_PRESS)
     {
-        glfwSetWindowShouldClose(this->window(), true);
         this->setTerminateStatus(true);
     }
     if (cursorDisabled)
@@ -226,13 +228,10 @@ void Engine::setupScene()
 void Engine::setupShaders()
 {
     shader = new Shader("res/shader/PBR.shader");
-    lightShader.load("res/shader/light.shader");
-    skyboxShader.load("res/shader/skyboxSphere.shader");
-    scrShader.load("res/shader/frameBuffer.shader");
+    lightShader.load("res/shader/lightDisplay.shader");
+    scrShader.load("res/shader/postEffects.shader");
     shadowShader.load("res/shader/shadowMapPoint.shader");
-    zShader.load("res/shader/Zpass.shader");
-
-    zShader.setUniform1f("farPlane", camera.farPlane());
+    zShader.load("res/shader/ssDepth.shader");
 }
 
 void Engine::setupGUI()
@@ -245,7 +244,7 @@ void Engine::setupGUI()
     ImGui_ImplOpenGL3_Init("#version 450");
 }
 
-void Engine::ZPass(DepthMap& zMap, std::vector<Model*> objects)
+void Engine::ssZPass()
 {
     this->setViewport(0, 0, this->windowWidth(), this->windowHeight());
 
@@ -253,17 +252,18 @@ void Engine::ZPass(DepthMap& zMap, std::vector<Model*> objects)
     glm::mat4 view = camera.viewMatrix();
 
     zShader.setUniformMat4("VPmatrix", proj * view);
+    zShader.setUniform1f("farPlane", camera.farPlane());
 
-    zMap.bind();
+    ssZMap->bind();
     renderer.clear();
     for (auto i : objects)
     {
         i->draw(zShader);
     }
-    zMap.unbind();
+    ssZMap->unbind();
 }
 
-void Engine::shadowPass(DepthMap* shadowMaps, std::vector<Light*>& lights, std::vector<Model*>& objects)
+void Engine::shadowPass()
 {
     float aspect = 1.0f;
     glm::mat4 shadowProj = glm::perspective(glm::radians(90.0f), aspect, SHADOW_NEARPLANE, SHADOW_FARPLANE);
@@ -280,25 +280,21 @@ void Engine::shadowPass(DepthMap* shadowMaps, std::vector<Light*>& lights, std::
         shadowTransforms[4] = shadowProj * glm::lookAt(lightPos, lightPos + glm::vec3(0.0, 0.0, 1.0), glm::vec3(0.0, -1.0, 0.0));
         shadowTransforms[5] = shadowProj * glm::lookAt(lightPos, lightPos + glm::vec3(0.0, 0.0, -1.0), glm::vec3(0.0, -1.0, 0.0));
 
-        shadowMaps[i].bind();
+        shadowMapPoint[i].bind();
 
-        this->setViewport(0, 0, shadowMaps[i].width(), shadowMaps[i].height());
+        this->setViewport(0, 0, shadowMapPoint[i].width(), shadowMapPoint[i].height());
         renderer.clear();
 
         shadowShader.setUniformVec3("lightPos", lightPos);
         for (int i = 0; i < 6; i++)
         {
-            shadowShader.setUniformMat4(("shadowMatrices[" + std::to_string(i) + "]").c_str(), shadowTransforms[i]);
+            shadowShader.setUniformMat4(("lightVP[" + std::to_string(i) + "]").c_str(), shadowTransforms[i]);
         }
 
         for (auto i : objects) i->draw(shadowShader);
 
-        shadowMaps[i].unbind();
+        shadowMapPoint[i].unbind();
     }
-}
-
-void Engine::ssShadowPass(DepthMap* ssShadow, DepthMap* ssDepth, DepthMap* shadowMaps)
-{
 }
 
 void Engine::renderPass()
@@ -310,6 +306,7 @@ void Engine::renderPass()
     glm::mat4 proj = camera.projMatrix(this->windowWidth(), this->windowHeight());
     glm::mat4 view = camera.viewMatrix();
 
+    shader->resetTextureMap();
     shader->setUniform1f("nearPlane", camera.nearPlane());
     shader->setUniform1f("shadowFarPlane", SHADOW_FARPLANE);
     shader->setUniform1f("shadowNearPlane", SHADOW_NEARPLANE);
@@ -328,14 +325,13 @@ void Engine::renderPass()
     shader->setUniform1i("shadowOn", shadowOn);
     shader->setUniform1i("forceFlatNormals", forceFlatNormals);
 
-    shader->setTexture("ZMap", ZMap->texture(), 16);
-    shader->setUniform1f("ZMapFarPlane", PREZ_FARPLANE);
+    shader->setTexture("ssZMap", ssZMap->texture());
+    shader->setUniform1f("ssZMapFar", PREZ_FARPLANE);
     shader->setUniform1i("enableZCull", enableZCull);
 
     for (int i = 0; i < lights.size(); i++)
     {
-        shadowMapPoint[i].linkTextureUnit(i + 8);
-        shader->setUniform1i(("shadowMapPoint[" + std::to_string(i) + "]").c_str(), i + 8);
+        shader->setTexture(("shadowMapPoint[" + std::to_string(i) + "]").c_str(), shadowMapPoint[i].texture());
     }
 
     for (int i = 0; i < objects.size(); i++)
@@ -370,8 +366,10 @@ void Engine::postPass()
 {
     this->setViewport(0, 0, this->windowWidth(), this->windowHeight());
     renderer.clear();
-    //scrShader.setTexture("frameBuffer", *ZBufferTex, 12);
-    scrShader.setTexture("frameBuffer", *screenFBTex, screenFBTex->slot);
+
+    scrShader.resetTextureMap();
+    //scrShader.setTexture("frameBuffer", ssZMap->texture(), 12);
+    scrShader.setTexture("frameBuffer", *screenFBTex);
     scrShader.setUniform1f("gamma", gamma);
     scrShader.setUniform1f("exposure", exposure);
     renderer.draw(screenVA, scrShader);

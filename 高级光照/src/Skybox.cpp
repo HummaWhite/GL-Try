@@ -14,7 +14,7 @@ void Skybox::loadSphere(const char* filePath, GLuint colorType)
 	m_SkyboxTex = new Texture;
 	m_SkyboxTex->loadSingle(filePath, colorType);
 	m_Shader.load("res/shader/skyboxSphere.shader");
-	m_Shader.setTexture("sky", *m_SkyboxTex, 0);
+	m_Shader.setTexture("sky", *m_SkyboxTex);
 	m_Shape = new Sphere(30, 15, 1.0f, Shape::VERTEX);
 	m_Shape->setupVA();
 }
@@ -31,12 +31,12 @@ void Skybox::setView(const glm::mat4& viewMatrix)
 
 void Skybox::draw()
 {
-	m_Shader.setTexture("sky", *m_SkyboxTex, 0);
+	m_Shader.setTexture("sky", *m_SkyboxTex);
 	renderer.draw(m_Shape->VA(), m_Shader);
 }
 
 void Skybox::draw(const Texture& tex)
 {
-	m_Shader.setTexture("sky", tex, 0);
+	m_Shader.setTexture("sky", tex);
 	renderer.draw(m_Shape->VA(), m_Shader);
 }

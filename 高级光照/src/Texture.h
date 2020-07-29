@@ -23,11 +23,8 @@ public:
 	void loadSingle(const std::string& filePath, GLuint internalFormat = GL_RGBA, GLuint filterType = GL_LINEAR);
 	void loadCube(const std::vector<std::string>& filePaths, GLuint internalFormat = GL_RGBA, GLuint filterType = GL_LINEAR);
 
-	void bind() const;
 	void bind(int slot) const;
 	void unbind() const;
-
-	int slot;
 
 private:
 	void allocate2D(GLuint internalFormat, int width, int height, GLuint sourceFormat, GLuint dataType, const void* data = nullptr);
@@ -36,5 +33,4 @@ private:
 private:
 	GLuint m_ID, m_TextureType;
 	int m_Width, m_Height, m_BitsPerPixel;
-	static int m_SlotsUsed;
 };

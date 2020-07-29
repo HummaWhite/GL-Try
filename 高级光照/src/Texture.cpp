@@ -1,8 +1,6 @@
 #include "Texture.h"
 #include "stb_image/stb_image.h"
 
-int Texture::m_SlotsUsed = 0;
-
 Texture::Texture() :
 	m_ID(0), m_Width(0), m_Height(0), m_BitsPerPixel(0), m_TextureType(0)
 {
@@ -22,8 +20,6 @@ void Texture::generate2D(int width, int height, GLuint format, GLuint filterType
 
 	glTextureParameteri(m_ID, GL_TEXTURE_MIN_FILTER, filterType);
 	glTextureParameteri(m_ID, GL_TEXTURE_MAG_FILTER, filterType);
-
-	slot = m_SlotsUsed++;
 }
 
 void Texture::generateDepth2D(int width, int height, GLuint format, GLuint filterType)
@@ -35,8 +31,6 @@ void Texture::generateDepth2D(int width, int height, GLuint format, GLuint filte
 
 	glTextureParameteri(m_ID, GL_TEXTURE_MIN_FILTER, filterType);
 	glTextureParameteri(m_ID, GL_TEXTURE_MAG_FILTER, filterType);
-
-	slot = m_SlotsUsed++;
 }
 
 void Texture::generateCube(int width, GLuint format, GLuint filterType)
@@ -51,8 +45,6 @@ void Texture::generateCube(int width, GLuint format, GLuint filterType)
 	glTextureParameteri(m_ID, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 	glTextureParameteri(m_ID, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 	glTextureParameteri(m_ID, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
-
-	slot = m_SlotsUsed++;
 }
 
 void Texture::generateDepthCube(int width, GLuint filterType)
@@ -67,8 +59,6 @@ void Texture::generateDepthCube(int width, GLuint filterType)
 	glTextureParameteri(m_ID, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 	glTextureParameteri(m_ID, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 	glTextureParameteri(m_ID, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
-
-	slot = m_SlotsUsed++;
 }
 
 void Texture::loadSingle(const std::string& filePath, GLuint internalFormat, GLuint filterType)
@@ -91,7 +81,6 @@ void Texture::loadSingle(const std::string& filePath, GLuint internalFormat, GLu
 	glTextureParameteri(m_ID, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
 	if (data != nullptr) stbi_image_free(data);
-	slot = m_SlotsUsed++;
 }
 
 void Texture::loadCube(const std::vector<std::string>& filePaths, GLuint internalFormat, GLuint filterType)
@@ -127,15 +116,6 @@ void Texture::loadCube(const std::vector<std::string>& filePaths, GLuint interna
 	glTextureParameteri(m_ID, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 	glTextureParameteri(m_ID, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 	glTextureParameteri(m_ID, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
-
-	slot = m_SlotsUsed++;
-}
-
-void Texture::bind() const
-{
-	glActiveTexture(GL_TEXTURE0 + this->slot);
-	//glBindTextureUnit(GL_TEXTURE0 + this->slot, m_ID);
-	glBindTexture(m_TextureType, m_ID);
 }
 
 void Texture::bind(int slot) const
