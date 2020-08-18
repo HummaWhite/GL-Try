@@ -1,2 +1,0 @@
-# PBR & BRDF & PCSS
-
