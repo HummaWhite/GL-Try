@@ -1,7 +1,7 @@
 # GL-Try
 
-#### 尝试学习OpenGL
+#### 学习OpenGL
 
-### 目前：PCSS
+### 目前：IBL
 
-![](https://raw.staticdn.net/HummaWhite/GL-Try/master/纹理/md-pics/OpenGL-Try%202020_6_23%2016_48_25.png)
+![](https://raw.staticdn.net/HummaWhite/GL-Try/master/纹理/md-pics/final.png)
