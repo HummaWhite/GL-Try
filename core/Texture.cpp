@@ -61,7 +61,7 @@ void Texture::loadSingle(const std::string& filePath, GLuint internalFormat)
 	if (data != nullptr) stbi_image_free(data);
 }
 
-void Texture::loadSingleHDR(const std::string& filePath)
+void Texture::loadFloat(const std::string& filePath)
 {
 	m_TextureType = GL_TEXTURE_2D;
 
@@ -106,6 +106,22 @@ void Texture::loadCube(const std::vector<std::string>& filePaths, GLuint interna
 		allocateCube(internalFormat, m_Width, GL_RGBA, GL_UNSIGNED_BYTE, data);
 		stbi_image_free(data);
 	}
+}
+
+void Texture::loadFloat(const float* data, int width, int height)
+{
+	m_TextureType = GL_TEXTURE_2D;
+
+	if (data == nullptr)
+	{
+		std::cout << "Error: unable to load texture. " << std::endl;
+		return;
+	}
+
+	m_Width = width, m_Height = height;
+
+	glCreateTextures(GL_TEXTURE_2D, 1, &m_ID);
+	allocate2D(GL_RGB16F, m_Width, m_Height, GL_RGB, GL_FLOAT, data);
 }
 
 void Texture::setFilter(GLuint filterType)

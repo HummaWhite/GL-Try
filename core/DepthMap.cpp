@@ -16,7 +16,7 @@ void DepthMap::init(int type, int width, int height, GLuint format)
 	m_Tex.setFilterAndWrapping(GL_LINEAR, GL_CLAMP_TO_EDGE);
 
 	m_FB.attachTexture(GL_DEPTH_ATTACHMENT, m_Tex);
-	m_FB.activateAttachmentTargets({ GL_NONE });
+	m_FB.activateAttachmentTargets({ GL_DEPTH_ATTACHMENT });
 	m_Width = width, m_Height = height;
 }
 
@@ -28,9 +28,4 @@ void DepthMap::bind()
 void DepthMap::unbind()
 {
 	m_FB.unbind();
-}
-
-void DepthMap::linkTextureUnit(int unit)
-{
-	m_Tex.bind(unit);
 }

@@ -16,8 +16,6 @@ public:
 	int height() const { return m_Height; }
 	Texture& texture() { return m_Tex; }
 
-	void linkTextureUnit(int unit);
-
 	enum DepthMapType
 	{
 		CUBE = 0,

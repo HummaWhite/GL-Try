@@ -89,57 +89,57 @@ void Shader::disable() const
 
 void Shader::set1i(const char* name, int v) const
 {
-	glProgramUniform1i(m_ID, getUniformLocation(m_ID, name), v);
+	glProgramUniform1i(m_ID, getUniformLocation(name), v);
 }
 
 void Shader::set1f(const char* name, float v0) const
 {
-	glProgramUniform1f(m_ID, getUniformLocation(m_ID, name), v0);
+	glProgramUniform1f(m_ID, getUniformLocation(name), v0);
 }
 
 void Shader::set2f(const char* name, float v0, float v1) const
 {
-	glProgramUniform2f(m_ID, getUniformLocation(m_ID, name), v0, v1);
+	glProgramUniform2f(m_ID, getUniformLocation(name), v0, v1);
 }
 
 void Shader::set3f(const char* name, float v0, float v1, float v2) const
 {
-	glProgramUniform3f(m_ID, getUniformLocation(m_ID, name), v0, v1, v2);
+	glProgramUniform3f(m_ID, getUniformLocation(name), v0, v1, v2);
 }
 
 void Shader::set4f(const char* name, float v0, float v1, float v2, float v3) const
 {
-	glProgramUniform4f(m_ID, getUniformLocation(m_ID, name), v0, v1, v2, v3);
+	glProgramUniform4f(m_ID, getUniformLocation(name), v0, v1, v2, v3);
 }
 
 void Shader::set1d(const char* name, double v) const
 {
-	glProgramUniform1d(m_ID, getUniformLocation(m_ID, name), v);
+	glProgramUniform1d(m_ID, getUniformLocation(name), v);
 }
 
 void Shader::setVec3(const char* name, const glm::vec3& vec) const
 {
-	glProgramUniform3f(m_ID, getUniformLocation(m_ID, name), vec.x, vec.y, vec.z);
+	glProgramUniform3f(m_ID, getUniformLocation(name), vec.x, vec.y, vec.z);
 }
 
 void Shader::setVec4(const char* name, const glm::vec4& vec) const
 {
-	glProgramUniform4f(m_ID, getUniformLocation(m_ID, name), vec.x, vec.y, vec.z, vec.w);
+	glProgramUniform4f(m_ID, getUniformLocation(name), vec.x, vec.y, vec.z, vec.w);
 }
 
 void Shader::setMat3(const char* name, const glm::mat3& mat) const
 {
-	glProgramUniformMatrix3fv(m_ID, getUniformLocation(m_ID, name), 1, GL_FALSE, glm::value_ptr(mat));
+	glProgramUniformMatrix3fv(m_ID, getUniformLocation(name), 1, GL_FALSE, glm::value_ptr(mat));
 }
 
 void Shader::setMat4(const char* name, const glm::mat4& mat) const
 {
-	glProgramUniformMatrix4fv(m_ID, getUniformLocation(m_ID, name), 1, GL_FALSE, glm::value_ptr(mat));
+	glProgramUniformMatrix4fv(m_ID, getUniformLocation(name), 1, GL_FALSE, glm::value_ptr(mat));
 }
 
 void Shader::setVec2d(const char* name, const glm::dvec2& vec) const
 {
-	glProgramUniform2dv(m_ID, getUniformLocation(m_ID, name), 1, glm::value_ptr(vec));
+	glProgramUniform2dv(m_ID, getUniformLocation(name), 1, glm::value_ptr(vec));
 }
 
 void Shader::setTexture(const char* name, const Texture& tex)
@@ -221,6 +221,14 @@ void Shader::setMaterial(const MaterialPBR& material)
 	set1f("material.metallic", material.metallic);
 	set1f("material.roughness", material.roughness);
 	set1f("material.ao", material.ao);
+}
+
+int Shader::getUniformLocation(const char* name) const
+{
+	GLint location = glGetUniformLocation(m_ID, name);
+	if (location == -1)
+		std::cout << "Error: unable to locate the uniform:  " << name << "  in shader:  " << m_Name << std::endl;
+	return location;
 }
 
 GLint Shader::getUniformLocation(GLuint programID, const char* name)

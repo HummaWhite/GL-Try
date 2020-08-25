@@ -12,7 +12,7 @@ void Skybox::loadSphere(const char* filePath)
 {
 	m_Type = SPHERE;
 	m_SkyboxTex = new Texture;
-	m_SkyboxTex->loadSingleHDR(filePath);
+	m_SkyboxTex->loadFloat(filePath);
 	m_SkyboxTex->setFilterAndWrapping(GL_LINEAR, GL_CLAMP_TO_EDGE);
 
 	m_Shader.load("res/shader/skyboxSphere.shader");

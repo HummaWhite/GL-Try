@@ -15,7 +15,6 @@ out VSOut
     vec3 fragPos;
     vec3 normal;
     mat3 TBN;
-    vec3 fragScrPos;
 } vsOut;
 
 void main()
@@ -29,7 +28,6 @@ void main()
     vec3 B = normalize(vec3(model * vec4(bitangent, 0.0)));
     vec3 N = normalize(vec3(model * vec4(normal, 0.0)));
     vsOut.TBN = mat3(T, B, N);
-    vsOut.fragScrPos = gl_Position.xyz;
 }
 
 //$Fragment
@@ -86,12 +84,12 @@ in VSOut
     vec3 fragPos;
     vec3 normal;
     mat3 TBN;
-    vec3 fragScrPos;
 } fsIn;
 
 out vec4 FragColor;
 
 uniform float nearPlane;
+uniform float farPlane;
 uniform MaterialPBR material;
 uniform int dirLightsCount;
 uniform int pointLightsCount;
@@ -110,13 +108,14 @@ uniform bool forceFlatNormals;
 
 uniform bool enableZCull;
 uniform sampler2D ssZMap;
-uniform float ssZMapFar;
 uniform vec2 viewport;
 
 uniform int maxPrefilterMipLevels;
 uniform sampler2D irradianceMap;
 uniform sampler2D prefilterMap;
 uniform sampler2D lutMap;
+
+uniform sampler2D aoMap;
 
 vec2 sphereToPlane(vec3 uv)
 {
@@ -313,18 +312,19 @@ vec3 IBLColor(vec3 N, vec3 V)
     vec3 prefilteredColor = textureLod(prefilterMap, sphereToPlane(R), material.roughness * float(maxPrefilterMipLevels - 1)).rgb;
     vec2 BRDF = texture(lutMap, vec2(max(dot(N, V), 0.0), material.roughness)).rg;
 
+    vec2 scrCoord = gl_FragCoord.xy / viewport;
+    float ao = texture(aoMap, scrCoord).r;
     vec3 specular = prefilteredColor * (F * BRDF.x + BRDF.y);
-    vec3 ambient = (kD * diffuse + specular) * material.ao;
+    vec3 ambient = (kD * diffuse + specular) * ao;
 
     return ambient;
 }
 
 void preZCull()
 {
-    const float cullEPS = 0.01;
     vec2 scrCoord = gl_FragCoord.xy / viewport;
-    float minDepth = texture(ssZMap, scrCoord).r * ssZMapFar;
-    if (fsIn.fragScrPos.z > minDepth + cullEPS) discard;
+    float minDepth = texture(ssZMap, scrCoord).r;
+    if (gl_FragCoord.z > minDepth) discard;
 }
 
 void main()

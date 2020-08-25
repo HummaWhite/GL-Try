@@ -1,9 +1,9 @@
-#include "IBLDemo.h"
+#include "DeferedEngine.h"
 
 int main()
 {
-    IBLDemo iblDemo;
-    Inputs::bindEngine(&iblDemo);
+    DeferedEngine engine;
+    Inputs::bindEngine(&engine);
     Inputs::setup();
-    return iblDemo.run();
+    return engine.run();
 }

@@ -40,6 +40,7 @@ public:
 	void setMaterial(const glm::vec3& albedo, float metallic, float roughness, float ao);
 	void setMaterial(const MaterialPhong& material);
 	void setMaterial(const MaterialPBR& material);
+	int getUniformLocation(const char* name) const;
 	static GLint getUniformLocation(GLuint programID, const char* name);
 
 	std::string name() const { return m_Name; }

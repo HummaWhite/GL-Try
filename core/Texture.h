@@ -22,8 +22,10 @@ public:
 	void generateDepthCube(int width, GLuint format);
 
 	void loadSingle(const std::string& filePath, GLuint internalFormat = GL_RGBA);
-	void loadSingleHDR(const std::string& filePath);
+	void loadFloat(const std::string& filePath);
 	void loadCube(const std::vector<std::string>& filePaths, GLuint internalFormat = GL_RGBA);
+
+	void loadFloat(const float* data, int width, int height);
 
 	void setFilter(GLuint filterType);
 	void setWrapping(GLuint wrappingType);
