@@ -84,6 +84,7 @@ void DeferedEngine::resetScreenBuffer(int width, int height)
         delete ssAlbedoMap;
         delete ssDepMetRouMap;
         delete ssNormalMap;
+        delete ssPosMap;
     }
 
     screenFB = new FrameBuffer;
@@ -95,6 +96,7 @@ void DeferedEngine::resetScreenBuffer(int width, int height)
     ssAlbedoMap = new Texture;
     ssDepMetRouMap = new Texture;
     ssNormalMap = new Texture;
+    ssPosMap = new Texture;
 
     screenFB->generate(width, height);
     screenRB->allocate(GL_DEPTH24_STENCIL8, width, height);
@@ -116,12 +118,15 @@ void DeferedEngine::resetScreenBuffer(int width, int height)
     ssDepMetRouMap->setFilterAndWrapping(GL_LINEAR, GL_CLAMP_TO_EDGE);
     ssNormalMap->generate2D(width, height, GL_RGB16F);
     ssNormalMap->setFilterAndWrapping(GL_LINEAR, GL_CLAMP_TO_EDGE);
+    ssPosMap->generate2D(width, height, GL_RGB16F);
+    ssPosMap->setFilterAndWrapping(GL_LINEAR, GL_CLAMP_TO_EDGE);
 
     gBufferFB->attachRenderBuffer(GL_DEPTH_STENCIL_ATTACHMENT, *gBufferRB);
     gBufferFB->attachTexture(GL_COLOR_ATTACHMENT0, *ssAlbedoMap);
     gBufferFB->attachTexture(GL_COLOR_ATTACHMENT1, *ssNormalMap);
     gBufferFB->attachTexture(GL_COLOR_ATTACHMENT2, *ssDepMetRouMap);
-    std::vector<GLenum> targets = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2 };
+    gBufferFB->attachTexture(GL_COLOR_ATTACHMENT3, *ssPosMap);
+    std::vector<GLenum> targets = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2, GL_COLOR_ATTACHMENT3 };
     gBufferFB->activateAttachmentTargets(targets);
 }
 
@@ -387,17 +392,19 @@ void DeferedEngine::aoPass()
     this->setViewport(0, 0, this->windowWidth(), this->windowHeight());
 
     glm::mat4 proj = camera.projMatrix(this->windowWidth(), this->windowHeight());
+    glm::mat4 view = camera.viewMatrix();
 
     ssaoShader.resetTextureMap();
     ssaoShader.setMat4("proj", proj);
-    ssaoShader.setMat4("projInv", glm::inverse(proj));
+    ssaoShader.setMat4("view", view);
     ssaoShader.set1f("radius", ssaoRadius);
-    ssaoShader.set1f("nearPlane", camera.nearPlane());
-    ssaoShader.set1f("farPlane", camera.farPlane());
     ssaoShader.set2f("viewport", this->windowWidth(), this->windowHeight());
+    ssaoShader.setTexture("positionMap", *ssPosMap);
     ssaoShader.setTexture("depMetRouMap", *ssDepMetRouMap);
     ssaoShader.setTexture("normalMap", *ssNormalMap);
     ssaoShader.setTexture("noiseMap", noiseTex);
+    ssaoShader.set1f("nearPlane", camera.nearPlane());
+    ssaoShader.set1f("farPlane", camera.farPlane());
 
     ssaoMap->bind();
     renderer.clear();
@@ -452,12 +459,13 @@ void DeferedEngine::renderPass()
     shader->set1f("nearPlane", camera.nearPlane());
     shader->set1f("shadowFarPlane", SHADOW_FARPLANE);
     shader->set1f("shadowNearPlane", SHADOW_NEARPLANE);
-    shader->setMat4("VPinv", glm::inverse(proj * view));
+    //shader->setMat4("VPinv", glm::inverse(proj * view));
     shader->setVec3("viewPos", camera.pos());
     shader->setLight(lights);
 
     shader->set1i("shadowOn", shadowOn);
     shader->set1i("enableSSAO", enableSSAO);
+    shader->setTexture("positionMap", *ssPosMap);
     shader->setTexture("depMetRouMap", *ssDepMetRouMap);
     shader->setTexture("normalMap", *ssNormalMap);
     shader->setTexture("albedoMap", *ssAlbedoMap);
@@ -500,7 +508,7 @@ void DeferedEngine::postPass()
 
     scrShader.resetTextureMap();
     scrShader.setTexture("frameBuffer", *screenFBTex);
-    scrShader.setTexture("frameBuffer", ssaoMap->texture());
+    //scrShader.setTexture("frameBuffer", ssaoMap->texture());
     scrShader.set1f("gamma", gamma);
     scrShader.set1f("exposure", exposure);
     renderer.draw(screenVA, scrShader);

@@ -66,6 +66,7 @@ uniform sampler2D irradianceMap;
 uniform sampler2D prefilterMap;
 uniform sampler2D lutMap;
 
+uniform sampler2D positionMap;
 uniform sampler2D depMetRouMap;
 uniform sampler2D normalMap;
 uniform sampler2D albedoMap;
@@ -295,13 +296,15 @@ void main()
     vec3 depMetRou = texture(depMetRouMap, texCoord).rgb;
 
     float fragDepth = depMetRou.r;
-    if (fragDepth < 0.01) discard;
+    if (fragDepth < 0.001) discard;
 
-    vec3 ssPos = vec3(texCoord, fragDepth);
+    /*vec3 ssPos = vec3(texCoord, fragDepth);
     vec4 ndcPos = vec4(ssPos * 2.0 - 1.0, 1.0);
     vec4 cvvPos = VPinv * ndcPos;
 
-    fragPos = cvvPos.xyz / cvvPos.w;
+    fragPos = cvvPos.xyz / cvvPos.w;*/
+
+    fragPos = texture(positionMap, texCoord).rgb;
     albedo = texture(albedoMap, texCoord).rgb;
     ao = enableSSAO ? texture(aoMap, texCoord).r : 1.0;
     metallic = depMetRou.g;

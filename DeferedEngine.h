@@ -73,6 +73,7 @@ private:
 	Texture* ssAlbedoMap = nullptr;
 	Texture* ssNormalMap = nullptr;
 	Texture* ssDepMetRouMap = nullptr;
+	Texture* ssPosMap = nullptr;
 	Shader gBufferShader;
 
 	FrameBuffer* ssaoFB = nullptr;
