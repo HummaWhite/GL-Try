@@ -60,6 +60,7 @@ uniform float shadowNearPlane;
 uniform float shadowFarPlane;
 uniform bool shadowOn;
 uniform bool enableSSAO;
+uniform bool enableIBL;
 
 uniform int maxPrefilterMipLevels;
 uniform sampler2D irradianceMap;
@@ -313,11 +314,11 @@ void main()
     vec3 N = texture(normalMap, texCoord).xyz;
     vec3 V = normalize(viewPos - fragPos);
 
-    vec3 result = IBLColor(N, V);
+    vec3 result = enableIBL ? IBLColor(N, V) : albedo * ao * 0.03;
 
     for (int i = 0; i < pointLightsCount; i++)
     {
-        result += calcPointLight(i, N, V);
+        result += calcPointLight(i, N, V) * ao;
     }
 
     result = result / (result + vec3(1.0));

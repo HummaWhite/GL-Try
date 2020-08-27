@@ -80,6 +80,9 @@ private:
 	DepthMap* ssaoMap = nullptr;
 	Shader ssaoShader;
 
+	DepthMap* ssaoBlurred = nullptr;
+	Shader aoBlurShader;
+
 	Texture lutMap;
 	Texture noiseTex;
 
@@ -114,6 +117,8 @@ private:
 
 	bool enableSSAO = true;
 	float ssaoRadius = 1.0f;
+
+	bool enableIBL = true;
 
 private:
 	bool cursorDisabled = true;

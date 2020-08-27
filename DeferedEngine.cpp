@@ -85,6 +85,7 @@ void DeferedEngine::resetScreenBuffer(int width, int height)
         delete ssDepMetRouMap;
         delete ssNormalMap;
         delete ssPosMap;
+        delete ssaoBlurred;
     }
 
     screenFB = new FrameBuffer;
@@ -97,6 +98,7 @@ void DeferedEngine::resetScreenBuffer(int width, int height)
     ssDepMetRouMap = new Texture;
     ssNormalMap = new Texture;
     ssPosMap = new Texture;
+    ssaoBlurred = new DepthMap;
 
     screenFB->generate(width, height);
     screenRB->allocate(GL_DEPTH24_STENCIL8, width, height);
@@ -107,7 +109,8 @@ void DeferedEngine::resetScreenBuffer(int width, int height)
     screenFB->attachRenderBuffer(GL_DEPTH_STENCIL_ATTACHMENT, *screenRB);
     screenFB->attachTexture(GL_COLOR_ATTACHMENT0, *screenFBTex);
 
-    ssaoMap->init(DepthMap::SCREEN_SPACE, width, height, GL_DEPTH_COMPONENT32F);
+    ssaoMap->init(DepthMap::SCREEN_SPACE, width / 2, height / 2, GL_DEPTH_COMPONENT32F);
+    ssaoBlurred->init(DepthMap::SCREEN_SPACE, width / 2, height / 2, GL_DEPTH_COMPONENT32F);
     
     gBufferFB->generate(width, height);
     gBufferRB->allocate(GL_DEPTH24_STENCIL8, width, height);
@@ -255,6 +258,7 @@ void DeferedEngine::setupShaders()
     prefilterShader.load("res/shader/envMapPrefilter.shader");
     gBufferShader.load("res/shader/gBuffer.shader");
     ssaoShader.load("res/shader/ssao.shader");
+    aoBlurShader.load("res/shader/ssaoBlur.shader");
 
     const int ssaoSamplesCount = 64;
 
@@ -389,7 +393,7 @@ void DeferedEngine::gBufferPass()
 
 void DeferedEngine::aoPass()
 {
-    this->setViewport(0, 0, this->windowWidth(), this->windowHeight());
+    this->setViewport(0, 0, this->windowWidth() / 2, this->windowHeight() / 2);
 
     glm::mat4 proj = camera.projMatrix(this->windowWidth(), this->windowHeight());
     glm::mat4 view = camera.viewMatrix();
@@ -398,7 +402,7 @@ void DeferedEngine::aoPass()
     ssaoShader.setMat4("proj", proj);
     ssaoShader.setMat4("view", view);
     ssaoShader.set1f("radius", ssaoRadius);
-    ssaoShader.set2f("viewport", this->windowWidth(), this->windowHeight());
+    ssaoShader.set2f("viewport", this->windowWidth() / 2, this->windowHeight() / 2);
     ssaoShader.setTexture("positionMap", *ssPosMap);
     ssaoShader.setTexture("depMetRouMap", *ssDepMetRouMap);
     ssaoShader.setTexture("normalMap", *ssNormalMap);
@@ -410,6 +414,13 @@ void DeferedEngine::aoPass()
     renderer.clear();
     renderer.draw(screenVA, ssaoShader);
     ssaoMap->unbind();
+
+    aoBlurShader.resetTextureMap();
+    aoBlurShader.setTexture("ssaoMap", ssaoMap->texture());
+    ssaoBlurred->bind();
+    renderer.clear();
+    renderer.draw(screenVA, aoBlurShader);
+    ssaoBlurred->unbind();
 }
 
 void DeferedEngine::shadowPass()
@@ -451,7 +462,7 @@ void DeferedEngine::renderPass()
     screenFB->bind();
 
     this->setViewport(0, 0, this->windowWidth(), this->windowHeight());
-    renderer.clear();
+    renderer.clear(0.0, 0.0, 0.0);
     glm::mat4 proj = camera.projMatrix(this->windowWidth(), this->windowHeight());
     glm::mat4 view = camera.viewMatrix();
     
@@ -469,11 +480,12 @@ void DeferedEngine::renderPass()
     shader->setTexture("depMetRouMap", *ssDepMetRouMap);
     shader->setTexture("normalMap", *ssNormalMap);
     shader->setTexture("albedoMap", *ssAlbedoMap);
-    shader->setTexture("aoMap", ssaoMap->texture());
+    shader->setTexture("aoMap", ssaoBlurred->texture());
     shader->setTexture("irradianceMap", *irradianceMap);
     shader->setTexture("prefilterMap", *prefilterMap);
     shader->setTexture("lutMap", lutMap);
     shader->set1i("maxPrefilterMipLevels", MAX_PREFILTER_MIPLEVELS);
+    shader->set1i("enableIBL", enableIBL);
 
     for (int i = 0; i < lights.size(); i++)
     {
@@ -482,9 +494,12 @@ void DeferedEngine::renderPass()
 
     renderer.draw(screenVA, *shader);
 
-    skybox->setProjection(proj);
-    skybox->setView(glm::mat4(glm::mat3(camera.viewMatrix())));
-    skybox->draw();
+    if (enableIBL)
+    {
+        skybox->setProjection(proj);
+        skybox->setView(glm::mat4(glm::mat3(camera.viewMatrix())));
+        skybox->draw();
+    }
 
     lightShader.setMat4("proj", proj);
     lightShader.setMat4("view", camera.viewMatrix());
@@ -508,7 +523,7 @@ void DeferedEngine::postPass()
 
     scrShader.resetTextureMap();
     scrShader.setTexture("frameBuffer", *screenFBTex);
-    //scrShader.setTexture("frameBuffer", ssaoMap->texture());
+    //scrShader.setTexture("frameBuffer", ssaoBlurred->texture());
     scrShader.set1f("gamma", gamma);
     scrShader.set1f("exposure", exposure);
     renderer.draw(screenVA, scrShader);
@@ -638,10 +653,10 @@ void DeferedEngine::renderGUI()
         {
             ImGui::Checkbox("Shadow", &shadowOn);
             ImGui::Checkbox("Texture", &useTexture);
-            ImGui::Checkbox("NormalMap", &useNormalMap);
             ImGui::Checkbox("FlatNormals", &forceFlatNormals);
+            ImGui::Checkbox("IBL", &enableIBL);
             ImGui::Checkbox("SSAO", &enableSSAO);
-            ImGui::DragFloat("SSAO Radius", &ssaoRadius, 0.01f, 0.01f, 10.0f);
+            ImGui::DragFloat("SSAO Radius", &ssaoRadius, 0.01f, 0.1f, 10.0f);
             ImGui::Checkbox("Vertical Sync", &verticalSync);
             ImGui::DragFloat("Gamma", &gamma, 0.01f, 1.0f, 4.0f);
             ImGui::DragFloat("Exposure", &exposure, 0.01f, 0.1f, 100.0f);
